@@ -1,0 +1,539 @@
+/**
+ * @license
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import React, { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { 
+  Search, 
+  ShoppingBag, 
+  Trash2, 
+  Plus, 
+  Minus, 
+  User, 
+  CreditCard, 
+  DollarSign, 
+  RefreshCw, 
+  Layers, 
+  Tag, 
+  Grid, 
+  List, 
+  Sparkles,
+  Printer,
+  ChevronDown
+} from "lucide-react";
+import { Product, PizzaSize, Category, OrderItem, OrderType, Order } from "../types";
+import { getStoredProducts, getStoredOrders, saveOrders, generateOrderNumber } from "../utils/pizzaStore";
+
+interface POSSystemProps {
+  onOrderPlaced?: () => void;
+}
+
+export default function POSSystem({ onOrderPlaced }: POSSystemProps) {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("All");
+  const [cart, setCart] = useState<OrderItem[]>([]);
+  
+  // Checkout detail states
+  const [customerName, setCustomerName] = useState<string>("Mesa 1 / Mostrador");
+  const [orderType, setOrderType] = useState<OrderType>("POS Mesa");
+  const [paymentMethod, setPaymentMethod] = useState<"Efectivo" | "Tarjeta" | "Transferencia">("Efectivo");
+  const [lastPlacedOrder, setLastPlacedOrder] = useState<Order | null>(null);
+
+  // Load products
+  useEffect(() => {
+    setProducts(getStoredProducts());
+    const handleUpdate = () => {
+      setProducts(getStoredProducts());
+    };
+    window.addEventListener("bettos_pizza_db_update", handleUpdate);
+    return () => window.removeEventListener("bettos_pizza_db_update", handleUpdate);
+  }, []);
+
+  const playChime = () => {
+    try {
+      const context = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const osc = context.createOscillator();
+      const gain = context.createGain();
+      osc.connect(gain);
+      gain.connect(context.destination);
+      osc.type = "triangle";
+      osc.frequency.setValueAtTime(440, context.currentTime); // A4
+      osc.frequency.setValueAtTime(554.37, context.currentTime + 0.1); // C#5
+      osc.frequency.setValueAtTime(659.25, context.currentTime + 0.2); // E5
+      gain.gain.setValueAtTime(0.12, context.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, context.currentTime + 0.5);
+      osc.start();
+      osc.stop(context.currentTime + 0.5);
+    } catch (e) {
+      console.log("Audio not supported");
+    }
+  };
+
+  const handleAddToCart = (product: Product, size?: PizzaSize, orilla?: boolean) => {
+    let finalPrice = product.price || 0;
+    if (product.prices && size) {
+      const priceObj = product.prices[size];
+      finalPrice = orilla ? priceObj.orillaRellena : priceObj.standard;
+    }
+
+    const cartItemId = `pos_${product.id}_${size || "std"}_${orilla ? "orilla" : "std"}`;
+    
+    // Check if matching item already exists in cart
+    const existingIndex = cart.findIndex(item => 
+      item.productId === product.id && 
+      item.selectedSize === size && 
+      item.orillaRellena === orilla
+    );
+
+    if (existingIndex > -1) {
+      const updated = [...cart];
+      updated[existingIndex].quantity += 1;
+      setCart(updated);
+    } else {
+      const newItem: OrderItem = {
+        id: "item_" + Date.now() + "_" + Math.random().toString(36).substr(2, 4),
+        productId: product.id,
+        name: product.name,
+        category: product.category,
+        quantity: 1,
+        selectedSize: size,
+        orillaRellena: orilla,
+        price: finalPrice
+      };
+      setCart([...cart, newItem]);
+    }
+    playChime();
+  };
+
+  const removeFromCart = (itemId: string) => {
+    setCart(cart.filter(i => i.id !== itemId));
+  };
+
+  const updateQuantity = (itemId: string, delta: number) => {
+    setCart(cart.map(item => {
+      if (item.id === itemId) {
+        return { ...item, quantity: Math.max(1, item.quantity + delta) };
+      }
+      return item;
+    }));
+  };
+
+  const toggleOrillaRellena = (itemId: string) => {
+    setCart(cart.map(item => {
+      if (item.id === itemId && item.selectedSize) {
+        const prod = products.find(p => p.id === item.productId);
+        if (!prod || !prod.prices) return item;
+        const newOrilla = !item.orillaRellena;
+        const priceObj = prod.prices[item.selectedSize];
+        const newPrice = newOrilla ? priceObj.orillaRellena : priceObj.standard;
+        return { ...item, orillaRellena: newOrilla, price: newPrice };
+      }
+      return item;
+    }));
+  };
+
+  const handleNotesChange = (itemId: string, val: string) => {
+    setCart(cart.map(item => {
+      if (item.id === itemId) {
+        return { ...item, notes: val };
+      }
+      return item;
+    }));
+  };
+
+  const getCartTotal = () => {
+    return cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  };
+
+  const handleCheckout = () => {
+    if (cart.length === 0) return;
+    
+    const total = getCartTotal();
+    const newOrder: Order = {
+      id: "ord_" + Date.now(),
+      orderNumber: generateOrderNumber(),
+      timestamp: new Date().toISOString(),
+      items: cart,
+      total,
+      status: "Pendiente",
+      type: orderType,
+      customerName,
+      paymentMethod,
+      sellerId: "vendedor_pos_1"
+    };
+
+    const currentOrders = getStoredOrders();
+    saveOrders([newOrder, ...currentOrders]);
+
+    setLastPlacedOrder(newOrder);
+    setCart([]);
+    setCustomerName("Mesa " + (Math.floor(Math.random() * 8) + 2) + " / Mostrador");
+    playChime();
+
+    if (onOrderPlaced) onOrderPlaced();
+  };
+
+  // Filtered lists
+  const filteredProducts = products.filter(p => {
+    const matchCategory = selectedCategory === "All" || p.category === selectedCategory;
+    const matchQuery = p.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                       p.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                       (p.ingredients && p.ingredients.some(i => i.toLowerCase().includes(searchQuery.toLowerCase())));
+    return matchCategory && matchQuery;
+  });
+
+  return (
+    <div className="w-full h-full bg-slate-900 text-slate-100 flex flex-col overflow-hidden font-sans">
+      
+      {/* POS Header */}
+      <div className="bg-[#1f0824] border-b border-purple-950/60 px-6 py-3 flex items-center justify-between shadow-lg">
+        <div className="flex items-center space-x-3">
+          <div className="w-10 h-10 bg-[#ffd400] text-red-600 rounded-lg flex items-center justify-center font-display font-black text-lg border-2 border-red-500 shadow-inner">
+            BP
+          </div>
+          <div>
+            <h2 className="font-display font-bold text-base text-[#ffd400] leading-none tracking-tight">Betto's Pizza - POS Terminal</h2>
+            <p className="text-[10px] text-purple-300 font-mono mt-0.5">VENDEDOR / CAJA ACTIVA</p>
+          </div>
+        </div>
+
+        {/* Categories Tab selector */}
+        <div className="flex space-x-1.5 overflow-x-auto max-w-[50%] no-scrollbar">
+          {["All", "Especialidad", "Un Solo Ingrediente", "Paquete", "Hamburguesa", "Empanada", "Spaghetti", "Bebida"].map(cat => (
+            <button
+              key={cat}
+              onClick={() => setSelectedCategory(cat)}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150 ${
+                selectedCategory === cat
+                  ? "bg-[#ffd400] text-slate-900 shadow-md font-bold"
+                  : "bg-[#33113D] text-purple-200 hover:bg-[#481856]"
+              }`}
+            >
+              {cat === "All" ? "Todo" : cat}
+            </button>
+          ))}
+        </div>
+
+        {/* Quick info */}
+        <div className="flex items-center space-x-4">
+          <div className="text-right hidden sm:block">
+            <p className="text-xs text-purple-200">Terminal #01</p>
+            <p className="text-[9px] text-green-400 font-mono flex items-center justify-end">
+              <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse"></span> CONECTADO
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Workspace */}
+      <div className="flex-1 flex overflow-hidden">
+        
+        {/* Left Side: Product Grid */}
+        <div className="flex-1 flex flex-col p-4 overflow-hidden">
+          {/* Search bar */}
+          <div className="relative mb-3.5">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+            <input
+              type="text"
+              placeholder="Buscar por nombre, especialidad o ingrediente (ej: jamón, jalapeño)..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full bg-slate-800/80 border border-slate-700/60 rounded-xl pl-11 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:border-purple-500 transition-all"
+            />
+            {searchQuery && (
+              <button 
+                onClick={() => setSearchQuery("")}
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-200"
+              >
+                Limpiar
+              </button>
+            )}
+          </div>
+
+          {/* Grid Container */}
+          <div className="flex-1 overflow-y-auto pr-1">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
+              {filteredProducts.map(product => (
+                <div 
+                  key={product.id}
+                  className="bg-slate-800/50 rounded-xl p-3.5 border border-slate-700/40 hover:border-purple-900/60 flex flex-col justify-between space-y-3.5 shadow-sm transition-all relative overflow-hidden group"
+                >
+                  <div>
+                    <div className="flex justify-between items-start">
+                      <span className="text-[9px] uppercase tracking-wider text-purple-300 font-mono bg-[#3C0F4A] px-2 py-0.5 rounded-md">
+                        {product.category}
+                      </span>
+                      {product.isPromo && (
+                        <span className="text-[9px] bg-red-600 text-white font-bold px-1.5 py-0.5 rounded">PROMO</span>
+                      )}
+                    </div>
+                    
+                    <h3 className="font-display font-bold text-sm text-slate-100 mt-2 truncate group-hover:text-[#ffd400] transition-colors">
+                      {product.name}
+                    </h3>
+                    
+                    <p className="text-[10px] text-slate-400 line-clamp-2 mt-1 leading-relaxed">
+                      {product.description}
+                    </p>
+                  </div>
+
+                  {/* Add action depending on type */}
+                  {product.prices ? (
+                    /* Customizable Pizza Sizes Grid for fast POS insertion */
+                    <div className="space-y-1.5">
+                      <p className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Añadir Tamaño:</p>
+                      <div className="grid grid-cols-5 gap-1">
+                        {(Object.keys(product.prices) as PizzaSize[]).map(size => {
+                          const priceObj = product.prices![size];
+                          return (
+                            <button
+                              key={size}
+                              onClick={() => handleAddToCart(product, size, false)}
+                              className="bg-slate-700/60 hover:bg-[#3C0F4A] hover:text-[#ffd400] text-slate-200 py-1.5 rounded-lg text-[9px] font-black transition-all flex flex-col items-center"
+                              title={`$${priceObj.standard}`}
+                            >
+                              <span>{size}</span>
+                              <span className="text-[8px] opacity-75 font-medium mt-0.5">${priceObj.standard}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    /* Simple fixed price product click */
+                    <div className="flex items-center justify-between pt-2">
+                      <span className="text-sm font-bold text-[#ffd400] font-mono">
+                        ${product.price}
+                      </span>
+                      <button
+                        onClick={() => handleAddToCart(product)}
+                        className="bg-slate-700 hover:bg-[#ffd400] hover:text-slate-900 text-slate-100 px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1 transition-all"
+                      >
+                        <Plus size={12} />
+                        <span>Añadir</span>
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {filteredProducts.length === 0 && (
+              <div className="text-center py-20 text-slate-500 text-xs">
+                No se encontraron productos que coincidan con los filtros.
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Side: POS Checkout panel / Cart */}
+        <div className="w-[380px] bg-[#1a0e1e] border-l border-purple-950/60 flex flex-col justify-between overflow-hidden">
+          
+          {/* Cart Header */}
+          <div className="p-4 border-b border-purple-950/40 bg-purple-950/20">
+            <div className="flex justify-between items-center">
+              <div className="flex items-center space-x-2">
+                <ShoppingBag size={18} className="text-[#ffd400]" />
+                <h3 className="font-display font-bold text-sm text-slate-100">Orden Activa</h3>
+              </div>
+              <button 
+                onClick={() => setCart([])}
+                className="text-xs text-purple-400 hover:text-red-400 transition-colors"
+                disabled={cart.length === 0}
+              >
+                Vaciar
+              </button>
+            </div>
+
+            {/* Quick config fields */}
+            <div className="grid grid-cols-2 gap-2 mt-3">
+              <div>
+                <label className="text-[9px] font-mono text-purple-300 block mb-1 uppercase">CLIENTE / MESA</label>
+                <input
+                  type="text"
+                  value={customerName}
+                  onChange={(e) => setCustomerName(e.target.value)}
+                  className="w-full bg-slate-800/80 border border-slate-700/60 rounded-lg px-2 py-1 text-xs text-slate-100 focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="text-[9px] font-mono text-purple-300 block mb-1 uppercase">TIPO</label>
+                <select
+                  value={orderType}
+                  onChange={(e) => setOrderType(e.target.value as OrderType)}
+                  className="w-full bg-slate-800/80 border border-slate-700/60 rounded-lg px-1.5 py-1 text-xs text-slate-100 focus:outline-none"
+                >
+                  <option value="POS Mesa">Mesa (Local)</option>
+                  <option value="Para Llevar">Para Llevar</option>
+                  <option value="Domicilio">A Domicilio</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Cart items list */}
+          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+            {cart.map(item => (
+              <div 
+                key={item.id} 
+                className="bg-slate-800/40 rounded-xl p-3 border border-slate-700/30 space-y-2 relative"
+              >
+                <div className="flex justify-between items-start gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h4 className="text-xs font-bold text-slate-100 truncate">{item.name}</h4>
+                    <p className="text-[10px] text-purple-300 mt-0.5">
+                      {item.selectedSize ? `Tamaño: ${item.selectedSize}` : "Estándar"}
+                    </p>
+                  </div>
+                  
+                  <span className="text-xs font-bold font-mono text-red-400 shrink-0">
+                    ${item.price * item.quantity}
+                  </span>
+                </div>
+
+                {/* Inline customization toggle for Pizzas */}
+                {item.selectedSize && (
+                  <div className="flex items-center justify-between bg-slate-800/60 px-2 py-1.5 rounded-lg">
+                    <button
+                      type="button"
+                      onClick={() => toggleOrillaRellena(item.id)}
+                      className={`text-[9px] font-bold px-2 py-0.5 rounded transition-all ${
+                        item.orillaRellena 
+                          ? "bg-purple-600 text-[#ffd400]" 
+                          : "bg-slate-700 text-slate-300"
+                      }`}
+                    >
+                      {item.orillaRellena ? "★ Orilla Rellena (Activo)" : "☆ Activar Orilla Rellena"}
+                    </button>
+                    <span className="text-[8px] text-slate-400">+$35 a +$70</span>
+                  </div>
+                )}
+
+                {/* Custom Notes */}
+                <input
+                  type="text"
+                  placeholder="Nota (ej. sin cebolla, dorada)..."
+                  value={item.notes || ""}
+                  onChange={(e) => handleNotesChange(item.id, e.target.value)}
+                  className="w-full bg-slate-800/50 border border-slate-700/30 rounded-lg px-2 py-1 text-[10px] text-slate-100 placeholder-slate-500 focus:outline-none focus:border-purple-600"
+                />
+
+                {/* Quantity and trash control */}
+                <div className="flex items-center justify-between pt-1 border-t border-slate-700/30">
+                  <div className="flex items-center bg-slate-700/60 rounded-lg p-0.5">
+                    <button 
+                      onClick={() => updateQuantity(item.id, -1)}
+                      className="p-1 text-slate-300 hover:text-white"
+                    >
+                      <Minus size={11} />
+                    </button>
+                    <span className="text-xs font-bold px-2 text-slate-100">{item.quantity}</span>
+                    <button 
+                      onClick={() => updateQuantity(item.id, 1)}
+                      className="p-1 text-slate-300 hover:text-white"
+                    >
+                      <Plus size={11} />
+                    </button>
+                  </div>
+
+                  <button 
+                    onClick={() => removeFromCart(item.id)}
+                    className="text-slate-400 hover:text-red-400 p-1"
+                    title="Eliminar artículo"
+                  >
+                    <Trash2 size={13} />
+                  </button>
+                </div>
+              </div>
+            ))}
+
+            {cart.length === 0 && (
+              <div className="text-center py-24 text-slate-500 text-xs">
+                No hay productos en el carrito.<br />
+                Haz clic en los tamaños de las pizzas o en los botones de agregar para comenzar.
+              </div>
+            )}
+          </div>
+
+          {/* Cart Footer / Totals and checkout */}
+          <div className="p-4 bg-purple-950/30 border-t border-purple-950/60 space-y-4">
+            
+            {/* Payment Method toggle */}
+            <div>
+              <label className="text-[9px] font-mono text-purple-300 block mb-1 uppercase">MÉTODO DE PAGO</label>
+              <div className="grid grid-cols-3 gap-1.5">
+                {[
+                  { id: "Efectivo", icon: <DollarSign size={11} />, label: "Efectivo" },
+                  { id: "Tarjeta", icon: <CreditCard size={11} />, label: "Tarjeta" },
+                  { id: "Transferencia", icon: <RefreshCw size={11} />, label: "Transf." }
+                ].map(p => (
+                  <button
+                    key={p.id}
+                    onClick={() => setPaymentMethod(p.id as any)}
+                    className={`py-1.5 rounded-lg text-[10px] font-bold flex items-center justify-center space-x-1 border transition-all ${
+                      paymentMethod === p.id 
+                        ? "bg-[#ffd400] text-slate-900 border-[#ffd400]" 
+                        : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+                    }`}
+                  >
+                    {p.icon}
+                    <span>{p.label}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Calculations */}
+            <div className="space-y-1 text-xs">
+              <div className="flex justify-between text-slate-400">
+                <span>Total Artículos:</span>
+                <span>{cart.reduce((a, b) => a + b.quantity, 0)}</span>
+              </div>
+              <div className="flex justify-between font-bold text-slate-100 text-base pt-1 border-t border-slate-700/50">
+                <span>Total a Cobrar:</span>
+                <span className="text-[#ffd400] font-mono">${getCartTotal()}</span>
+              </div>
+            </div>
+
+            {/* Big Green Checkout Button */}
+            <button
+              onClick={handleCheckout}
+              disabled={cart.length === 0}
+              className={`w-full py-3 rounded-xl font-display font-black text-sm uppercase tracking-wider flex items-center justify-center space-x-2 shadow-lg transition-all ${
+                cart.length === 0
+                  ? "bg-slate-800 text-slate-500 cursor-not-allowed"
+                  : "bg-emerald-500 text-white hover:bg-emerald-400 active:scale-[0.98]"
+              }`}
+            >
+              <span>COBRAR ORDEN 🍕</span>
+            </button>
+
+            {/* Print mock invoice of last placed order */}
+            {lastPlacedOrder && (
+              <motion.div 
+                initial={{ opacity: 0, y: 5 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-slate-800 p-2 rounded-lg border border-slate-700/60 flex items-center justify-between text-[10px] text-slate-300"
+              >
+                <span>Último Ticket: #{lastPlacedOrder.orderNumber}</span>
+                <button 
+                  onClick={() => alert(`Imprimiendo Ticket de Compra para ${lastPlacedOrder.customerName} - Total: $${lastPlacedOrder.total}`)}
+                  className="text-[#ffd400] flex items-center space-x-1 hover:underline"
+                >
+                  <Printer size={11} />
+                  <span>Imprimir</span>
+                </button>
+              </motion.div>
+            )}
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+  );
+}

@@ -1,0 +1,6 @@
+{
+  "name": "Betto's Pizza",
+  "description": "Aplicación móvil y de escritorio para Betto's Pizza con módulos para Cliente, Cocina, Vendedor (POS) y Administración.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
