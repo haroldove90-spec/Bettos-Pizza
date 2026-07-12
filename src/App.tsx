@@ -18,7 +18,9 @@ import {
   Sparkles, 
   Info,
   Layers,
-  Monitor
+  Monitor,
+  ArrowLeft,
+  Home
 } from "lucide-react";
 import ClientMobileApp from "./components/ClientMobileApp";
 import POSSystem from "./components/POSSystem";
@@ -28,8 +30,8 @@ import { Role } from "./types";
 import { getStoredOrders, resetToInitial } from "./utils/pizzaStore";
 
 export default function App() {
-  // Active viewing mode: can be MULTIPANEL or individual roles (Role.CLIENTE, Role.VENDEDOR, Role.COCINA, Role.ADMIN)
-  const [viewMode, setViewMode] = useState<"MULTIPANEL" | Role>("MULTIPANEL");
+  // Active viewing mode: can be "HOME", "MULTIPANEL", or individual roles (Role.CLIENTE, Role.VENDEDOR, Role.COCINA, Role.ADMIN)
+  const [viewMode, setViewMode] = useState<"HOME" | "MULTIPANEL" | Role>("HOME");
   const [ordersCount, setOrdersCount] = useState<number>(0);
 
   useEffect(() => {
@@ -55,199 +57,130 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col pizza-gradient text-slate-100 select-none">
+    <div className="min-h-screen bg-slate-950 flex flex-col pizza-gradient text-slate-100 select-none animate-fadeIn">
       
-      {/* Top Universal Branding Bar with Italian accent flag */}
-      <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 px-6 py-3.5 flex flex-col md:flex-row md:items-center md:justify-between gap-4 z-40 sticky top-0 shadow-xl">
-        <div className="flex items-center space-x-3">
-          {/* Pizza logo */}
-          <div className="w-11 h-11 bg-yellow-400 border-2 border-red-500 rounded-full flex items-center justify-center shadow-lg font-display font-black text-red-600 text-sm tracking-tight shrink-0">
-            BP
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <h1 className="font-display font-black text-lg text-yellow-400 uppercase tracking-tight leading-none">
-                BETTO'S PIZZA
-              </h1>
-              {/* Italian flag element */}
-              <div className="flex h-3 w-5 rounded overflow-hidden shadow-xs border border-white/20 shrink-0">
-                <div className="w-1/3 bg-green-600 h-full"></div>
-                <div className="w-1/3 bg-white h-full"></div>
-                <div className="w-1/3 bg-red-600 h-full"></div>
-              </div>
-            </div>
-            <p className="text-[10px] text-slate-400 mt-1 leading-none tracking-wide font-medium">
-              EL AUTENTICO SABOR ITALIANO • ¡LA MAGIA DEL SABOR!
-            </p>
-          </div>
-        </div>
-
-        {/* Universal Role Navigator Selector */}
-        <div className="flex flex-wrap items-center gap-1.5 bg-slate-950/60 p-1 rounded-2xl border border-slate-800/80 max-w-full">
+      {/* Sleek Navigation Header (Only visible when not on Home) */}
+      {viewMode !== "HOME" && (
+        <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 px-6 py-3.5 flex items-center justify-between z-40 sticky top-0 shadow-xl">
+          <button
+            onClick={() => setViewMode("HOME")}
+            className="flex items-center space-x-2 px-3.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-slate-300 hover:text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
+          >
+            <ArrowLeft size={14} />
+            <span>Volver al Inicio</span>
+          </button>
           
-          <button
-            onClick={() => setViewMode("MULTIPANEL")}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
-              viewMode === "MULTIPANEL"
-                ? "bg-gradient-to-r from-red-600 to-amber-500 text-white shadow-md font-extrabold"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <Monitor size={13} />
-            <span className="hidden lg:inline">Simulador Realtime</span>
-            <span className="lg:hidden">4-en-1</span>
-          </button>
-
-          <div className="w-[1px] h-4 bg-slate-800 mx-1 hidden md:block"></div>
-
-          <button
-            onClick={() => setViewMode(Role.CLIENTE)}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
-              viewMode === Role.CLIENTE
-                ? "bg-purple-900 text-white shadow-md"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <ShoppingBag size={13} />
-            <span>Cliente (Móvil)</span>
-          </button>
-
-          <button
-            onClick={() => setViewMode(Role.VENDEDOR)}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
-              viewMode === Role.VENDEDOR
-                ? "bg-purple-900 text-white shadow-md"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <Grid size={13} />
-            <span>Vendedor (POS)</span>
-          </button>
-
-          <button
-            onClick={() => setViewMode(Role.COCINA)}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 relative ${
-              viewMode === Role.COCINA
-                ? "bg-purple-900 text-white shadow-md"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <ChefHat size={13} />
-            <span>Cocina</span>
-            {ordersCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-600 text-white font-mono text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center border border-slate-900 animate-pulse">
-                {ordersCount}
+          <div className="flex items-center space-x-3">
+            <div className="w-8 h-8 bg-yellow-400 border border-red-500 rounded-full flex items-center justify-center shadow-md font-display font-black text-red-600 text-[10px] tracking-tight shrink-0">
+              BP
+            </div>
+            <div className="flex flex-col items-end md:items-start">
+              <div className="flex items-center space-x-2">
+                <h2 className="font-display font-black text-xs md:text-sm text-yellow-400 uppercase tracking-tight leading-none">
+                  BETTO'S PIZZA
+                </h2>
+                <div className="flex h-2.5 w-4 rounded overflow-hidden shadow-xs border border-white/20 shrink-0">
+                  <div className="w-1/3 bg-green-600 h-full"></div>
+                  <div className="w-1/3 bg-white h-full"></div>
+                  <div className="w-1/3 bg-red-600 h-full"></div>
+                </div>
+              </div>
+              <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">
+                {viewMode === Role.CLIENTE && "Móvil del Cliente"}
+                {viewMode === Role.VENDEDOR && "Punto de Venta (POS)"}
+                {viewMode === Role.COCINA && "Pantalla de Cocina"}
+                {viewMode === Role.ADMIN && "Panel de Administración"}
               </span>
-            )}
-          </button>
-
-          <button
-            onClick={() => setViewMode(Role.ADMIN)}
-            className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center space-x-1.5 ${
-              viewMode === Role.ADMIN
-                ? "bg-purple-900 text-white shadow-md"
-                : "text-slate-400 hover:text-slate-200"
-            }`}
-          >
-            <Sliders size={13} />
-            <span>Admin</span>
-          </button>
-
-        </div>
-      </header>
+            </div>
+          </div>
+        </header>
+      )}
 
       {/* Main Workspace Frame */}
       <main className="flex-1 flex flex-col min-h-0 relative">
         <AnimatePresence mode="wait">
           
-          {/* 1. MULTIPANEL REALTIME SIMULATOR GRID */}
-          {viewMode === "MULTIPANEL" && (
+          {/* AESTHETIC HOME PORTAL MENU */}
+          {viewMode === "HOME" && (
             <motion.div
-              key="sim-view"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex-1 p-4 lg:p-6 grid grid-cols-1 xl:grid-cols-12 gap-6 min-h-0 items-start overflow-y-auto"
+              key="home-view"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 min-h-0"
             >
-              
-              {/* CLIENT PHONE MODULE (3/12 width) */}
-              <div className="xl:col-span-3 flex flex-col items-center">
-                <div className="w-full flex items-center justify-between mb-2 px-2">
-                  <span className="text-[11px] uppercase tracking-wider font-bold text-yellow-400 flex items-center">
-                    <span className="w-2 h-2 bg-yellow-400 rounded-full mr-2 animate-pulse"></span>
-                    MÓDULO 1: CLIENTE
-                  </span>
-                  <span className="text-[10px] text-slate-400">Mockup Celular</span>
+              <div className="text-center mb-10 max-w-md">
+                <div className="inline-flex h-4 w-7 rounded overflow-hidden shadow-sm border border-white/20 mb-4 animate-pulse">
+                  <div className="w-1/3 bg-green-600 h-full"></div>
+                  <div className="w-1/3 bg-white h-full"></div>
+                  <div className="w-1/3 bg-red-600 h-full"></div>
                 </div>
-                <ClientMobileApp onOrderPlaced={handleOrderNotification} />
+                <h1 className="font-display font-black text-4xl md:text-5xl text-yellow-400 tracking-tight leading-none uppercase">
+                  BETTO'S PIZZA
+                </h1>
+                <p className="text-xs text-slate-400 uppercase tracking-widest font-semibold mt-3">
+                  SISTEMA DE GESTIÓN DE ROLES
+                </p>
               </div>
 
-              {/* REST OF ROLES SIMULATION (9/12 width) - Grid of Cocina, POS, Admin */}
-              <div className="xl:col-span-9 flex flex-col space-y-6">
-                
-                {/* Intro guide banner for simulator */}
-                <div className="bg-slate-900/60 p-4 rounded-2xl border border-slate-800 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                  <div className="space-y-1">
-                    <h3 className="text-xs font-bold text-[#ffd400] flex items-center uppercase tracking-wider">
-                      <Sparkles size={14} className="mr-1.5 text-yellow-400" />
-                      SIMULADOR EN TIEMPO REAL ACTIVO (Vistas Simultáneas)
-                    </h3>
-                    <p className="text-[11px] text-slate-400 max-w-2xl">
-                      Prueba el flujo de trabajo completo de la Pizzeria Betto's: agrega un producto o paquete familiar en el <b>Celular del Cliente</b> o en la <b>Terminal POS del Vendedor</b>. El pedido sonará de inmediato y aparecerá en la <b>Pantalla de Cocina</b> para ser preparado. ¡Las ventas se actualizarán en el panel del <b>Administrador</b>!
-                    </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl">
+                {/* Role 1: Cliente */}
+                <button
+                  onClick={() => setViewMode(Role.CLIENTE)}
+                  className="group relative bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 hover:border-purple-500/50 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center justify-center h-48 shadow-lg hover:shadow-purple-500/10 cursor-pointer animate-fadeIn"
+                >
+                  <div className="w-16 h-16 rounded-full bg-purple-500/10 group-hover:bg-purple-500/20 text-purple-400 flex items-center justify-center transition-all duration-300 mb-4 shadow-inner transform group-hover:scale-110">
+                    <ShoppingBag size={32} />
                   </div>
-                  
-                  <button
-                    onClick={() => {
-                      resetToInitial();
-                      handleOrderNotification();
-                    }}
-                    className="shrink-0 text-[10px] font-bold text-yellow-400 hover:text-slate-950 border border-yellow-500/30 hover:bg-[#ffd400] px-3 py-1.5 rounded-lg transition-all"
-                  >
-                    Reiniciar Datos Demo
-                  </button>
-                </div>
+                  <h3 className="font-display font-black text-xl text-slate-100 group-hover:text-purple-300 transition-colors">
+                    Cliente (Móvil)
+                  </h3>
+                </button>
 
-                {/* Sub panels row */}
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                  
-                  {/* KITCHEN DISPLAY BLOCK */}
-                  <div className="bg-[#0e1424] rounded-2xl border border-slate-800 shadow-lg h-[460px] overflow-hidden flex flex-col">
-                    <div className="bg-[#12192c] border-b border-slate-800 px-4 py-2.5 flex items-center justify-between text-[11px]">
-                      <span className="font-bold text-purple-400 uppercase tracking-wider">MÓDULO 2: COCINA</span>
-                      <span className="text-[10px] text-slate-400">Rastreador de Preparación</span>
-                    </div>
-                    <div className="flex-1 overflow-hidden">
-                      <KitchenDisplay />
-                    </div>
+                {/* Role 2: Vendedor */}
+                <button
+                  onClick={() => setViewMode(Role.VENDEDOR)}
+                  className="group relative bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 hover:border-emerald-500/50 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center justify-center h-48 shadow-lg hover:shadow-emerald-500/10 cursor-pointer animate-fadeIn"
+                >
+                  <div className="w-16 h-16 rounded-full bg-emerald-500/10 group-hover:bg-emerald-500/20 text-emerald-400 flex items-center justify-center transition-all duration-300 mb-4 shadow-inner transform group-hover:scale-110">
+                    <Grid size={32} />
                   </div>
+                  <h3 className="font-display font-black text-xl text-slate-100 group-hover:text-emerald-300 transition-colors">
+                    Vendedor (POS)
+                  </h3>
+                </button>
 
-                  {/* ADMIN STATS BLOCK */}
-                  <div className="bg-[#0b080f] rounded-2xl border border-slate-800 shadow-lg h-[460px] overflow-hidden flex flex-col">
-                    <div className="bg-[#140f1a] border-b border-purple-950/60 px-4 py-2.5 flex items-center justify-between text-[11px]">
-                      <span className="font-bold text-[#ffd400] uppercase tracking-wider">MÓDULO 3: ADMIN & MÉTRICAS</span>
-                      <span className="text-[10px] text-slate-400">Métricas & Menú</span>
-                    </div>
-                    <div className="flex-1 overflow-hidden">
-                      <AdminPanel />
-                    </div>
+                {/* Role 3: Cocina */}
+                <button
+                  onClick={() => setViewMode(Role.COCINA)}
+                  className="group relative bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 hover:border-amber-500/50 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center justify-center h-48 shadow-lg hover:shadow-amber-500/10 cursor-pointer animate-fadeIn"
+                >
+                  <div className="w-16 h-16 rounded-full bg-amber-500/10 group-hover:bg-amber-500/20 text-amber-400 flex items-center justify-center transition-all duration-300 mb-4 shadow-inner relative transform group-hover:scale-110">
+                    <ChefHat size={32} />
+                    {ordersCount > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white font-mono text-xs w-6.5 h-6.5 rounded-full flex items-center justify-center border-2 border-slate-900 animate-bounce shadow-md">
+                        {ordersCount}
+                      </span>
+                    )}
                   </div>
+                  <h3 className="font-display font-black text-xl text-slate-100 group-hover:text-amber-300 transition-colors">
+                    Cocina
+                  </h3>
+                </button>
 
-                </div>
-
-                {/* POS SYSTEM BLOCK */}
-                <div className="bg-slate-900 rounded-2xl border border-slate-800 shadow-lg h-[500px] overflow-hidden flex flex-col">
-                  <div className="bg-slate-950/60 border-b border-slate-800 px-4 py-2.5 flex items-center justify-between text-[11px]">
-                    <span className="font-bold text-emerald-400 uppercase tracking-wider">MÓDULO 4: VENDEDOR / CAJERO (POS)</span>
-                    <span className="text-[10px] text-slate-400">Terminal de Venta Rápida (Optimizado para Tablet/PC)</span>
+                {/* Role 4: Admin */}
+                <button
+                  onClick={() => setViewMode(Role.ADMIN)}
+                  className="group relative bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 hover:border-rose-500/50 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center justify-center h-48 shadow-lg hover:shadow-rose-500/10 cursor-pointer animate-fadeIn"
+                >
+                  <div className="w-16 h-16 rounded-full bg-rose-500/10 group-hover:bg-rose-500/20 text-rose-400 flex items-center justify-center transition-all duration-300 mb-4 shadow-inner transform group-hover:scale-110">
+                    <Sliders size={32} />
                   </div>
-                  <div className="flex-1 overflow-hidden">
-                    <POSSystem onOrderPlaced={handleOrderNotification} />
-                  </div>
-                </div>
-
+                  <h3 className="font-display font-black text-xl text-slate-100 group-hover:text-rose-300 transition-colors">
+                    Admin
+                  </h3>
+                </button>
               </div>
-
             </motion.div>
           )}
 
