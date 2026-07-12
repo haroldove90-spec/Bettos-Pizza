@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   TrendingUp, 
@@ -30,10 +30,31 @@ import {
   Palette,
   Edit3,
   Eye,
-  EyeOff
+  EyeOff,
+  Truck,
+  FileText,
+  Download,
+  AlertTriangle,
+  Volume2,
+  VolumeX,
+  Layers,
+  Award
 } from "lucide-react";
-import { Product, Order, Category, PizzaSize } from "../types";
-import { getStoredProducts, saveProducts, getStoredOrders, saveOrders, resetToInitial } from "../utils/pizzaStore";
+import { Product, Order, Category, PizzaSize, Courier, IngredientInventory, ShippingZone } from "../types";
+import { 
+  getStoredProducts, 
+  saveProducts, 
+  getStoredOrders, 
+  saveOrders, 
+  resetToInitial,
+  getStoredCouriers,
+  saveCouriers,
+  getStoredIngredients,
+  saveIngredients,
+  getStoredShippingZones,
+  saveShippingZones,
+  playNotificationChime
+} from "../utils/pizzaStore";
 
 interface AdminPanelProps {
   onBackToHome?: () => void;
@@ -43,14 +64,27 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   
+  // New states for extra features
+  const [couriers, setCouriers] = useState<Courier[]>([]);
+  const [ingredients, setIngredients] = useState<IngredientInventory[]>([]);
+  const [shippingZones, setShippingZones] = useState<ShippingZone[]>([]);
+  const [soundEnabled, setSoundEnabled] = useState<boolean>(() => {
+    return localStorage.getItem("bettos_admin_sound_enabled") !== "false";
+  });
+
+  // Track previous orders count to avoid repeating sounds
+  const previousOrdersCount = useRef<number>(-1);
+
   // Stats
   const [totalSales, setTotalSales] = useState<number>(0);
   const [totalOrders, setTotalOrders] = useState<number>(0);
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [averageTicket, setAverageTicket] = useState<number>(0);
+  const [statsStartDate, setStatsStartDate] = useState<string>("");
+  const [statsEndDate, setStatsEndDate] = useState<string>("");
 
-  // Active view: "stats" or "products" or "orders" or "personalization"
-  const [activeSubTab, setActiveSubTab] = useState<"stats" | "products" | "orders" | "personalization">("stats");
+  // Active view: "stats" | "products" | "orders" | "couriers" | "inventory" | "personalization"
+  const [activeSubTab, setActiveSubTab] = useState<"stats" | "products" | "orders" | "personalization" | "couriers" | "inventory">("stats");
 
   // Admin Profile state
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
@@ -111,6 +145,12 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
     return initial;
   });
 
+  // Auto-save and propagate branding updates in real-time
+  useEffect(() => {
+    localStorage.setItem("bettos_pizza_branding", JSON.stringify(branding));
+    window.dispatchEvent(new Event("bettos_pizza_branding_update"));
+  }, [branding]);
+
   // Initialize
   useEffect(() => {
     loadData();
@@ -126,8 +166,24 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
   const loadData = () => {
     const prods = getStoredProducts();
     const ords = getStoredOrders();
+    const crs = getStoredCouriers();
+    const ingrs = getStoredIngredients();
+    const zns = getStoredShippingZones();
+    
     setProducts(prods);
     setOrders(ords);
+    setCouriers(crs);
+    setIngredients(ingrs);
+    setShippingZones(zns);
+
+    // If there are more orders now than before, play the new order chime!
+    if (soundEnabled && previousOrdersCount.current !== -1 && ords.length > previousOrdersCount.current) {
+      const newest = ords[ords.length - 1];
+      if (newest && newest.status === "Pendiente") {
+        playNotificationChime("new_order");
+      }
+    }
+    previousOrdersCount.current = ords.length;
 
     // Calculate metrics
     const sales = ords
@@ -145,6 +201,73 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
       resetToInitial();
       loadData();
     }
+  };
+
+  const handleExportCSV = () => {
+    let filtered = [...orders];
+    if (statsStartDate) {
+      filtered = filtered.filter(o => {
+        const orderDate = new Date(o.createdAt || new Date()).toISOString().split("T")[0];
+        return orderDate >= statsStartDate;
+      });
+    }
+    if (statsEndDate) {
+      filtered = filtered.filter(o => {
+        const orderDate = new Date(o.createdAt || new Date()).toISOString().split("T")[0];
+        return orderDate <= statsEndDate;
+      });
+    }
+
+    const headers = [
+      "No. Pedido", 
+      "Fecha/Hora", 
+      "Cliente", 
+      "Telefono", 
+      "Direccion", 
+      "Zona de Envio", 
+      "Tipo", 
+      "Estado", 
+      "Metodo Pago", 
+      "Costo Envio (MXN)", 
+      "Total (MXN)", 
+      "Articulos"
+    ];
+    
+    const rows = filtered.map(o => {
+      const dateStr = o.createdAt ? new Date(o.createdAt).toLocaleString("es-MX") : "";
+      const itemsStr = o.items.map(item => `${item.quantity}x ${item.productName} (${item.size || "S/T"}${item.orillaRellena ? " c/Orilla" : ""})`).join(" | ");
+      return [
+        o.orderNumber,
+        `"${dateStr}"`,
+        `"${o.customerName.replace(/"/g, '""')}"`,
+        `"${(o.customerPhone || "").replace(/"/g, '""')}"`,
+        `"${(o.customerAddress || "").replace(/"/g, '""')}"`,
+        `"${(o.shippingZone || "").replace(/"/g, '""')}"`,
+        o.type,
+        o.status,
+        o.paymentMethod,
+        o.shippingCost || 0,
+        o.total,
+        `"${itemsStr.replace(/"/g, '""')}"`
+      ];
+    });
+
+    const csvContent = "\uFEFF" + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `Bettos_Pizza_Reporte_Ventas_${new Date().toISOString().split("T")[0]}.csv`);
+    link.style.visibility = 'hidden';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const handleToggleSound = () => {
+    const newVal = !soundEnabled;
+    setSoundEnabled(newVal);
+    localStorage.setItem("bettos_admin_sound_enabled", String(newVal));
   };
 
   const handleDeleteProduct = (id: string) => {
@@ -284,6 +407,134 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
     setOrders(updated);
   };
 
+  // Courier Actions
+  const handleToggleCourierStatus = (id: string) => {
+    const updated = couriers.map(c => {
+      if (c.id === id) {
+        let nextStatus: "Disponible" | "En Ruta" | "Inactivo" = "Disponible";
+        if (c.status === "Disponible") nextStatus = "En Ruta";
+        else if (c.status === "En Ruta") nextStatus = "Inactivo";
+        return { ...c, status: nextStatus };
+      }
+      return c;
+    });
+    saveCouriers(updated);
+    setCouriers(updated);
+  };
+
+  const handleDeleteCourier = (id: string) => {
+    if (confirm("¿Estás seguro de que deseas dar de baja a este repartidor?")) {
+      const updated = couriers.filter(c => c.id !== id);
+      saveCouriers(updated);
+      setCouriers(updated);
+    }
+  };
+
+  const [newCourierName, setNewCourierName] = useState<string>("");
+  const [newCourierPhone, setNewCourierPhone] = useState<string>("");
+  const [newCourierVehicle, setNewCourierVehicle] = useState<"🛵 Motocicleta" | "🚲 Bicicleta" | "🚗 Automóvil">("🛵 Motocicleta");
+
+  const handleCreateCourier = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newCourierName || !newCourierPhone) return;
+
+    const newC: Courier = {
+      id: "cour-" + Date.now(),
+      name: newCourierName,
+      phone: newCourierPhone,
+      vehicle: newCourierVehicle,
+      status: "Disponible",
+      avatar: newCourierVehicle.split(" ")[0]
+    };
+
+    const updated = [...couriers, newC];
+    saveCouriers(updated);
+    setCouriers(updated);
+    
+    // Clear inputs
+    setNewCourierName("");
+    setNewCourierPhone("");
+  };
+
+  const handleAssignCourierToOrder = (orderId: string, courierId: string) => {
+    if (!courierId) return;
+    const courier = couriers.find(c => c.id === courierId);
+    if (!courier) return;
+
+    const updatedOrders = orders.map(o => {
+      if (o.id === orderId) {
+        return {
+          ...o,
+          status: "En Camino" as const,
+          deliveryManId: courier.id,
+          deliveryManName: courier.name
+        };
+      }
+      return o;
+    });
+
+    const updatedCouriers = couriers.map(c => {
+      if (c.id === courierId && c.status === "Disponible") {
+        return { ...c, status: "En Ruta" as const };
+      }
+      return c;
+    });
+
+    saveOrders(updatedOrders);
+    setOrders(updatedOrders);
+    saveCouriers(updatedCouriers);
+    setCouriers(updatedCouriers);
+
+    playNotificationChime("status_assigned");
+  };
+
+  // Inventory actions
+  const handleUpdateIngredientStock = (id: string, change: number) => {
+    const updated = ingredients.map(ing => {
+      if (ing.id === id) {
+        const newStock = Math.max(0, ing.stock + change);
+        return { ...ing, stock: newStock };
+      }
+      return ing;
+    });
+    saveIngredients(updated);
+    setIngredients(updated);
+  };
+
+  const handleSetIngredientMinStock = (id: string, minStock: number) => {
+    const updated = ingredients.map(ing => {
+      if (ing.id === id) {
+        return { ...ing, minStock: Math.max(0, minStock) };
+      }
+      return ing;
+    });
+    saveIngredients(updated);
+    setIngredients(updated);
+  };
+
+  // Shipping zone actions
+  const handleToggleShippingZone = (id: string) => {
+    const updated = shippingZones.map(z => {
+      if (z.id === id) {
+        return { ...z, isActive: !z.isActive };
+      }
+      return z;
+    });
+    saveShippingZones(updated);
+    setShippingZones(updated);
+  };
+
+  const handleUpdateShippingZoneCost = (id: string, cost: number) => {
+    const updated = shippingZones.map(z => {
+      if (z.id === id) {
+        return { ...z, cost: Math.max(0, cost) };
+      }
+      return z;
+    });
+    saveShippingZones(updated);
+    setShippingZones(updated);
+  };
+
   return (
     <div className="w-full h-full bg-[#0a070e] text-slate-100 flex flex-col font-sans overflow-hidden pb-16 md:pb-0 relative">
       
@@ -305,12 +556,14 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
             { id: "stats", label: "Estadísticas" },
             { id: "products", label: "Menú" },
             { id: "orders", label: "Historial" },
+            { id: "couriers", label: "Repartidores" },
+            { id: "inventory", label: "Inventario" },
             { id: "personalization", label: "Branding" }
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveSubTab(tab.id as any)}
-              className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold whitespace-nowrap transition-all duration-150 ${
+              className={`px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold whitespace-nowrap transition-all duration-150 ${
                 activeSubTab === tab.id
                   ? "bg-[#ffd400] text-slate-950 font-bold"
                   : "text-purple-200 hover:bg-purple-950/40"
@@ -411,6 +664,100 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
                   </div>
                   <div className="p-2.5 bg-purple-500/10 text-purple-400 rounded-xl">
                     <TrendingUp size={20} />
+                  </div>
+                </div>
+
+              </div>
+
+              {/* CONTROL DE ALERTAS SONORAS Y EXPORTACIÓN DE REPORTES (CIERRE DE CAJA) */}
+              <div className="bg-[#160f1e] rounded-2xl p-5 border border-purple-950/40 grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* Alertas Sonoras */}
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between gap-4">
+                    <div>
+                      <h4 className="font-display font-bold text-sm text-[#ffd400] flex items-center gap-2 uppercase tracking-wide">
+                        {soundEnabled ? <Volume2 size={18} className="text-yellow-400" /> : <VolumeX size={18} className="text-purple-400" />}
+                        Notificaciones de Sonido
+                      </h4>
+                      <p className="text-[10px] text-slate-400 mt-1">
+                        Timbre automático para cocina, POS y administración al recibir nuevos pedidos.
+                      </p>
+                    </div>
+                    <button
+                      onClick={handleToggleSound}
+                      className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all border shrink-0 ${
+                        soundEnabled
+                          ? "bg-green-500/15 border-green-500/30 text-green-400 hover:bg-green-500/25"
+                          : "bg-purple-950/20 border-purple-900/40 text-purple-400 hover:bg-purple-950/40"
+                      }`}
+                    >
+                      {soundEnabled ? "🔊 ACTIVO" : "🔇 MUTED"}
+                    </button>
+                  </div>
+                  
+                  <div className="flex flex-wrap items-center gap-2 bg-purple-950/15 p-2.5 rounded-xl border border-purple-950/40">
+                    <span className="text-[10px] text-purple-300 font-medium">Probar tonos:</span>
+                    <div className="flex gap-1.5">
+                      <button
+                        onClick={() => playNotificationChime("new_order")}
+                        className="bg-purple-900/40 hover:bg-purple-900/70 text-purple-200 text-[9px] font-bold px-2 py-1 rounded-lg transition-all"
+                      >
+                        🔔 Nuevo
+                      </button>
+                      <button
+                        onClick={() => playNotificationChime("status_ready")}
+                        className="bg-purple-900/40 hover:bg-purple-900/70 text-purple-200 text-[9px] font-bold px-2 py-1 rounded-lg transition-all"
+                      >
+                        🍕 Listo
+                      </button>
+                      <button
+                        onClick={() => playNotificationChime("status_assigned")}
+                        className="bg-purple-900/40 hover:bg-purple-900/70 text-purple-200 text-[9px] font-bold px-2 py-1 rounded-lg transition-all"
+                      >
+                        🛵 Asignado
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Reportes de Ventas y Cierre de Caja */}
+                <div className="space-y-3 border-t md:border-t-0 md:border-l border-purple-950/60 pt-4 md:pt-0 md:pl-6">
+                  <h4 className="font-display font-bold text-sm text-[#ffd400] flex items-center gap-2 uppercase tracking-wide">
+                    <FileText size={18} className="text-yellow-400" />
+                    Cierre de Caja y Reportes (CSV)
+                  </h4>
+                  <p className="text-[10px] text-slate-400">
+                    Filtra por rango de fecha para exportar el historial completo de ventas en formato CSV compatible con Excel.
+                  </p>
+                  
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] text-slate-400">Desde:</span>
+                      <input
+                        type="date"
+                        value={statsStartDate}
+                        onChange={(e) => setStatsStartDate(e.target.value)}
+                        className="bg-slate-900/95 border border-purple-950/60 rounded-lg text-[10px] px-2 py-1 text-slate-100 outline-hidden focus:border-yellow-400 transition-all font-mono"
+                      />
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] text-slate-400">Hasta:</span>
+                      <input
+                        type="date"
+                        value={statsEndDate}
+                        onChange={(e) => setStatsEndDate(e.target.value)}
+                        className="bg-slate-900/95 border border-purple-950/60 rounded-lg text-[10px] px-2 py-1 text-slate-100 outline-hidden focus:border-yellow-400 transition-all font-mono"
+                      />
+                    </div>
+                    
+                    <button
+                      onClick={handleExportCSV}
+                      className="bg-[#ffd400] hover:bg-[#ffe040] text-slate-950 px-3.5 py-1.5 rounded-xl text-xs font-black flex items-center gap-1 shadow-md transition-all active:scale-95 ml-auto md:ml-0 cursor-pointer"
+                    >
+                      <Download size={13} />
+                      <span>EXPORTAR CSV</span>
+                    </button>
                   </div>
                 </div>
 
@@ -869,6 +1216,372 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
             </motion.div>
           )}
 
+          {/* GESTIÓN DE REPARTIDORES */}
+          {activeSubTab === "couriers" && (
+            <motion.div
+              key="couriers-view"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-6 max-w-6xl mx-auto pb-10"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-purple-950/40 pb-4">
+                <div>
+                  <h3 className="font-display font-black text-lg text-slate-100 flex items-center gap-2">
+                    <Truck className="text-yellow-400" size={20} />
+                    Gestión de Repartidores y Asignación
+                  </h3>
+                  <p className="text-xs text-purple-300 font-mono">Da de alta repartidores, supervisa su estado en tiempo real y asigna pedidos listos.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                {/* COLUMN 1: NEW COURIER FORM & LIST */}
+                <div className="lg:col-span-1 space-y-6">
+                  {/* Register courier card */}
+                  <div className="bg-[#160f1e] rounded-2xl p-4 border border-purple-950/40 space-y-4">
+                    <h4 className="font-display font-bold text-xs uppercase text-yellow-400 tracking-wider">Registrar Repartidor</h4>
+                    <form onSubmit={handleCreateCourier} className="space-y-3 text-xs">
+                      <div className="space-y-1">
+                        <label className="text-purple-300 font-bold block">Nombre Completo:</label>
+                        <input
+                          type="text"
+                          required
+                          value={newCourierName}
+                          onChange={(e) => setNewCourierName(e.target.value)}
+                          placeholder="e.g. Manuel Torres"
+                          className="w-full bg-slate-900/90 border border-purple-950/60 rounded-xl px-3 py-2 text-slate-100 placeholder-slate-500 outline-hidden focus:border-yellow-400 transition-all"
+                        />
+                      </div>
+                      
+                      <div className="space-y-1">
+                        <label className="text-purple-300 font-bold block">Teléfono Móvil:</label>
+                        <input
+                          type="text"
+                          required
+                          value={newCourierPhone}
+                          onChange={(e) => setNewCourierPhone(e.target.value)}
+                          placeholder="e.g. 55 1234-5678"
+                          className="w-full bg-slate-900/90 border border-purple-950/60 rounded-xl px-3 py-2 text-slate-100 placeholder-slate-500 outline-hidden focus:border-yellow-400 transition-all"
+                        />
+                      </div>
+
+                      <div className="space-y-1">
+                        <label className="text-purple-300 font-bold block">Medio de Transporte:</label>
+                        <select
+                          value={newCourierVehicle}
+                          onChange={(e: any) => setNewCourierVehicle(e.target.value)}
+                          className="w-full bg-slate-900/95 border border-purple-950/60 rounded-xl px-3 py-2 text-slate-100 outline-hidden focus:border-yellow-400 transition-all font-sans"
+                        >
+                          <option value="🛵 Motocicleta">🛵 Motocicleta</option>
+                          <option value="🚲 Bicicleta">🚲 Bicicleta</option>
+                          <option value="🚗 Automóvil">🚗 Automóvil</option>
+                        </select>
+                      </div>
+
+                      <button
+                        type="submit"
+                        className="w-full bg-[#ffd400] hover:bg-[#ffe040] text-slate-950 py-2 rounded-xl font-bold uppercase transition-all shadow-md active:scale-95 cursor-pointer mt-2"
+                      >
+                        Alta de Repartidor
+                      </button>
+                    </form>
+                  </div>
+
+                  {/* Summary card */}
+                  <div className="bg-purple-950/10 border border-purple-900/20 rounded-2xl p-4 text-xs text-purple-300 space-y-2">
+                    <p className="font-bold text-[#ffd400]">💡 ¿Cómo funciona la asignación?</p>
+                    <p className="leading-relaxed">Cuando la cocina marca un pedido de reparto domiciliario como <strong>"Listo"</strong>, aparecerá automáticamente en la lista de asignación. Selecciona un repartidor disponible para despacharlo; el pedido cambiará a estado <strong>"En Camino"</strong> y el repartidor lo verá en su propio panel.</p>
+                  </div>
+                </div>
+
+                {/* COLUMN 2: ACTIVE DELIVERY ASSIGNMENT LIST */}
+                <div className="lg:col-span-2 space-y-6">
+                  {/* Deliveries awaiting assignment */}
+                  <div className="bg-[#160f1e] rounded-2xl p-5 border border-purple-950/40 space-y-4">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-display font-bold text-xs uppercase text-yellow-400 tracking-wider">Despacho de Pedidos Listos</h4>
+                      <span className="text-[10px] font-mono bg-yellow-400/10 text-yellow-400 px-2.5 py-0.5 rounded-full font-bold">
+                        {orders.filter(o => o.type === "Domicilio" && o.status === "Listo").length} Esperando
+                      </span>
+                    </div>
+
+                    {orders.filter(o => o.type === "Domicilio" && o.status === "Listo").length === 0 ? (
+                      <div className="py-12 text-center text-slate-500 space-y-3">
+                        <div className="inline-flex p-4 bg-purple-950/10 rounded-full text-purple-400">
+                          <Truck size={32} />
+                        </div>
+                        <p className="text-xs max-w-md mx-auto leading-relaxed">No hay pedidos a domicilio listos para entrega en este momento. Los pedidos aparecerán aquí una vez que la cocina los prepare y los marque como <strong>"Listo"</strong>.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3.5">
+                        {orders.filter(o => o.type === "Domicilio" && o.status === "Listo").map(o => (
+                          <div key={o.id} className="bg-slate-900/60 border border-purple-950/60 p-4 rounded-xl flex flex-col md:flex-row md:items-center justify-between gap-4 text-xs">
+                            <div className="space-y-1 max-w-md">
+                              <div className="flex items-center gap-2">
+                                <span className="font-black text-[#ffd400] font-mono">Pedido #{o.orderNumber}</span>
+                                <span className="text-[9px] bg-purple-950/40 text-purple-300 font-bold px-2 py-0.5 rounded-md uppercase">{o.paymentMethod}</span>
+                                <span className="text-[10px] text-green-400 font-black font-mono">${o.total}</span>
+                              </div>
+                              <p className="font-bold text-slate-200">Cliente: {o.customerName} <span className="text-slate-400 font-normal">({o.customerPhone || "Sin Teléfono"})</span></p>
+                              <p className="text-slate-400 text-[11px] leading-relaxed">📍 {o.customerAddress || "Sin Dirección"}</p>
+                              <p className="text-purple-300 text-[10px]">📦 Detalle: {o.items.map(i => `${i.quantity}x ${i.productName}`).join(", ")}</p>
+                            </div>
+                            
+                            <div className="shrink-0 flex items-center gap-2">
+                              <select
+                                id={`assign-select-${o.id}`}
+                                defaultValue=""
+                                className="bg-slate-950 border border-purple-950/80 rounded-xl text-xs px-3 py-2 text-slate-100 outline-hidden font-sans"
+                              >
+                                <option value="" disabled>Seleccionar Repartidor...</option>
+                                {couriers.filter(c => c.status !== "Inactivo").map(c => (
+                                  <option key={c.id} value={c.id}>
+                                    {c.name} ({c.status === "En Ruta" ? "🟡 En Ruta" : "🟢 Disponible"})
+                                  </option>
+                                ))}
+                              </select>
+                              <button
+                                onClick={() => {
+                                  const selectEl = document.getElementById(`assign-select-${o.id}`) as HTMLSelectElement;
+                                  if (selectEl && selectEl.value) {
+                                    handleAssignCourierToOrder(o.id, selectEl.value);
+                                  } else {
+                                    alert("Por favor selecciona un repartidor antes de despachar.");
+                                  }
+                                }}
+                                className="bg-[#ffd400] hover:bg-[#ffe040] text-slate-950 font-bold px-3 py-2 rounded-xl transition-all uppercase text-[10px] tracking-wide active:scale-95 cursor-pointer"
+                              >
+                                Despachar
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Courier fleet registry */}
+                  <div className="bg-[#160f1e] rounded-2xl p-5 border border-purple-950/40 space-y-4">
+                    <h4 className="font-display font-bold text-xs uppercase text-yellow-400 tracking-wider">Flota de Reparto Activa</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5">
+                      {couriers.map(c => (
+                        <div key={c.id} className="bg-slate-900/60 border border-purple-950/60 p-3.5 rounded-xl flex items-center justify-between gap-3 text-xs">
+                          <div className="flex items-center space-x-3">
+                            <span className="text-2xl p-1 bg-purple-950/40 rounded-xl">{c.avatar}</span>
+                            <div>
+                              <p className="font-bold text-slate-200 leading-tight">{c.name}</p>
+                              <p className="text-[10px] text-slate-400 mt-0.5">{c.phone}</p>
+                              <p className="text-[9px] text-purple-300 font-mono mt-0.5">{c.vehicle}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              onClick={() => handleToggleCourierStatus(c.id)}
+                              className={`px-2.5 py-1 rounded-lg text-[9px] font-bold transition-all ${
+                                c.status === "Disponible"
+                                  ? "bg-green-500/15 text-green-400 hover:bg-green-500/25"
+                                  : c.status === "En Ruta"
+                                  ? "bg-amber-500/15 text-amber-400 hover:bg-amber-500/25"
+                                  : "bg-red-500/15 text-red-400 hover:bg-red-500/25"
+                              }`}
+                              title="Haz clic para alternar disponibilidad"
+                            >
+                              {c.status === "Disponible" ? "🟢 Disponible" : c.status === "En Ruta" ? "🟡 En Ruta" : "🔴 Inactivo"}
+                            </button>
+
+                            <button
+                              onClick={() => handleDeleteCourier(c.id)}
+                              className="p-1.5 bg-red-500/10 hover:bg-red-500 hover:text-white border border-red-500/15 text-red-400 rounded-lg transition-all"
+                              title="Dar de baja"
+                            >
+                              <Trash2 size={12} />
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            </motion.div>
+          )}
+
+          {/* GESTIÓN DE INVENTARIO Y ENVÍOS */}
+          {activeSubTab === "inventory" && (
+            <motion.div
+              key="inventory-view"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-6 max-w-6xl mx-auto pb-10"
+            >
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-purple-950/40 pb-4">
+                <div>
+                  <h3 className="font-display font-black text-lg text-slate-100 flex items-center gap-2">
+                    <Layers className="text-yellow-400" size={20} />
+                    Control de Inventario y Tarifas de Envío
+                  </h3>
+                  <p className="text-xs text-purple-300 font-mono">Controla el stock de ingredientes críticos y configura costos dinámicos de reparto por zona.</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                
+                {/* COLUMN 1 & 2: INVENTORY STOCK TABLE */}
+                <div className="lg:col-span-2 space-y-6">
+                  <div className="bg-[#160f1e] rounded-2xl p-5 border border-purple-950/40 space-y-4">
+                    <div className="flex items-center justify-between border-b border-purple-950/30 pb-3">
+                      <h4 className="font-display font-bold text-xs uppercase text-yellow-400 tracking-wider">Ingredientes Críticos</h4>
+                      <span className="text-[10px] text-purple-300 font-mono">
+                        {ingredients.filter(ing => ing.stock <= ing.minStock).length} alertas de bajo stock
+                      </span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                      <table className="w-full text-left text-xs">
+                        <thead>
+                          <tr className="border-b border-purple-300/10 text-purple-300 font-bold">
+                            <th className="py-2.5">Ingrediente</th>
+                            <th className="py-2.5">Stock Disponible</th>
+                            <th className="py-2.5">Nivel Alerta Min</th>
+                            <th className="py-2.5 text-center">Acciones Rápidas</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-purple-950/10">
+                          {ingredients.map(ing => {
+                            const isLow = ing.stock <= ing.minStock;
+                            return (
+                              <tr key={ing.id} className="hover:bg-purple-950/5 transition-all">
+                                <td className="py-3 font-medium text-slate-200">
+                                  <div className="flex flex-col">
+                                    <span>{ing.name}</span>
+                                    {isLow && (
+                                      <span className="text-[8px] bg-red-500/10 text-red-400 px-1.5 py-0.5 rounded-sm font-black w-max mt-1 uppercase flex items-center gap-0.5 animate-pulse">
+                                        <AlertTriangle size={8} /> stock crítico
+                                      </span>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className="py-3 font-mono font-bold">
+                                  <span className={isLow ? "text-red-400" : "text-green-400"}>
+                                    {ing.stock} {ing.unit}
+                                  </span>
+                                </td>
+                                <td className="py-3">
+                                  <div className="flex items-center gap-1">
+                                    <input
+                                      type="number"
+                                      min="0"
+                                      value={ing.minStock}
+                                      onChange={(e) => handleSetIngredientMinStock(ing.id, parseInt(e.target.value) || 0)}
+                                      className="w-14 bg-slate-900 border border-purple-950/60 rounded-md text-center py-0.5 font-mono text-[11px] text-slate-100 outline-hidden focus:border-yellow-400"
+                                    />
+                                    <span className="text-[10px] text-slate-400 font-mono">{ing.unit}</span>
+                                  </div>
+                                </td>
+                                <td className="py-3">
+                                  <div className="flex items-center justify-center gap-1.5">
+                                    <button
+                                      onClick={() => handleUpdateIngredientStock(ing.id, -5)}
+                                      className="bg-slate-900 border border-purple-950/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 px-1.5 py-1 rounded-md font-mono font-bold text-[10px] transition-all cursor-pointer"
+                                    >
+                                      -5
+                                    </button>
+                                    <button
+                                      onClick={() => handleUpdateIngredientStock(ing.id, -1)}
+                                      className="bg-slate-900 border border-purple-950/60 hover:bg-slate-800 text-slate-400 hover:text-slate-200 px-1.5 py-1 rounded-md font-mono font-bold text-[10px] transition-all cursor-pointer"
+                                    >
+                                      -1
+                                    </button>
+                                    <button
+                                      onClick={() => handleUpdateIngredientStock(ing.id, 1)}
+                                      className="bg-[#ffd400] hover:bg-[#ffe040] text-slate-950 px-1.5 py-1 rounded-md font-mono font-bold text-[10px] transition-all cursor-pointer"
+                                    >
+                                      +1
+                                    </button>
+                                    <button
+                                      onClick={() => handleUpdateIngredientStock(ing.id, 5)}
+                                      className="bg-[#ffd400] hover:bg-[#ffe040] text-slate-950 px-1.5 py-1 rounded-md font-mono font-bold text-[10px] transition-all cursor-pointer"
+                                    >
+                                      +5
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+
+                {/* COLUMN 3: SHIPPING COSTS BY ZONE */}
+                <div className="lg:col-span-1 space-y-6">
+                  {/* Shipping zones cost configuration */}
+                  <div className="bg-[#160f1e] rounded-2xl p-4 border border-purple-950/40 space-y-4">
+                    <h4 className="font-display font-bold text-xs uppercase text-yellow-400 tracking-wider">Tarifas de Envío por Zona</h4>
+                    <p className="text-[10px] text-slate-400 leading-relaxed">
+                      Configura el cargo por entrega a domicilio basado en la distancia del cliente. Estas tarifas se calculan dinámicamente en tiempo real en la pantalla de pago del cliente.
+                    </p>
+
+                    <div className="space-y-4">
+                      {shippingZones.map(zone => (
+                        <div key={zone.id} className="bg-slate-900/60 border border-purple-950/60 p-3.5 rounded-xl space-y-3 text-xs">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-bold text-slate-200">{zone.name}</p>
+                              <p className="text-[10px] text-purple-300 font-mono">{zone.distance}</p>
+                            </div>
+                            
+                            <button
+                              onClick={() => handleToggleShippingZone(zone.id)}
+                              className={`px-2.5 py-1 rounded-lg text-[9px] font-bold transition-all ${
+                                zone.isActive
+                                  ? "bg-green-500/15 text-green-400 hover:bg-green-500/25"
+                                  : "bg-purple-950/20 text-purple-400 hover:bg-purple-950/40"
+                              }`}
+                            >
+                              {zone.isActive ? "🟢 ACTIVA" : "🔴 INACTIVA"}
+                            </button>
+                          </div>
+
+                          {zone.isActive && (
+                            <div className="flex items-center justify-between pt-2 border-t border-purple-950/30 gap-2">
+                              <span className="text-[10px] text-slate-400">Cargo de envío:</span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-bold text-slate-200 font-mono">$</span>
+                                <input
+                                  type="number"
+                                  min="0"
+                                  value={zone.cost}
+                                  onChange={(e) => handleUpdateShippingZoneCost(zone.id, parseInt(e.target.value) || 0)}
+                                  className="w-18 bg-slate-950 border border-purple-950/80 rounded-lg py-1 px-2 font-mono text-center text-xs font-bold text-slate-100 focus:border-yellow-400 outline-hidden"
+                                />
+                                <span className="text-[10px] text-slate-400 font-mono">MXN</span>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Summary stock note */}
+                  <div className="bg-purple-950/10 border border-purple-900/20 rounded-2xl p-4 text-xs text-purple-300 space-y-2">
+                    <p className="font-bold text-[#ffd400]">💡 Desactivación de menú</p>
+                    <p className="leading-relaxed">Si el stock de un ingrediente crítico llega a <strong>0</strong>, cualquier pizza u otro producto del menú que requiera ese ingrediente se mostrará automáticamente como <strong>"Sin Stock / Agotado"</strong> y no se podrá comprar ni agregar al carrito en el POS ni en la App Móvil.</p>
+                  </div>
+                </div>
+
+              </div>
+            </motion.div>
+          )}
+
           {/* PERSONALIZACIÓN (BRANDING) */}
           {activeSubTab === "personalization" && (
             <motion.div
@@ -1074,14 +1787,12 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
                     <button
                       type="button"
                       onClick={() => {
-                        localStorage.setItem("bettos_pizza_branding", JSON.stringify(branding));
-                        window.dispatchEvent(new Event("bettos_pizza_branding_update"));
-                        alert("¡Diseño guardado y aplicado a toda la aplicación con éxito!");
+                        alert("¡El diseño se guarda automáticamente en tiempo real! Todos los cambios ya han sido guardados y aplicados a la plataforma.");
                       }}
-                      className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold px-6 py-2.5 rounded-xl text-xs flex items-center space-x-1.5 transition-all shadow-md cursor-pointer"
+                      className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold px-5 py-2 rounded-xl text-xs flex items-center space-x-1.5 transition-all shadow-md cursor-pointer"
                     >
                       <Check size={14} />
-                      <span>Aplicar y Guardar Cambios</span>
+                      <span>¡Cambios Aplicados al Instante!</span>
                     </button>
                   </div>
                 </div>
@@ -1169,37 +1880,53 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
       </div>
 
       {/* Navigation action bar for mobile/tablet only */}
-      <div className="md:hidden bg-[#191122] border-t border-purple-950/60 py-2.5 px-4 flex justify-around items-center text-slate-400 z-30 shadow-md shrink-0 fixed bottom-0 left-0 right-0 h-16">
+      <div className="md:hidden bg-[#191122] border-t border-purple-950/60 py-2 px-1 flex justify-around items-center text-slate-400 z-30 shadow-md shrink-0 fixed bottom-0 left-0 right-0 h-16">
         <button 
           onClick={() => setActiveSubTab("stats")}
           className={`flex flex-col items-center space-y-0.5 transition-colors ${activeSubTab === "stats" ? "text-[#ffd400] font-extrabold" : "text-purple-300 hover:text-white"}`}
         >
-          <TrendingUp size={16} />
-          <span className="text-[9px] font-bold">Estadísticas</span>
+          <TrendingUp size={15} />
+          <span className="text-[8px] font-bold">Estadísticas</span>
         </button>
         
         <button 
           onClick={() => setActiveSubTab("products")}
           className={`flex flex-col items-center space-y-0.5 relative transition-colors ${activeSubTab === "products" ? "text-[#ffd400] font-extrabold" : "text-purple-300 hover:text-white"}`}
         >
-          <Tag size={16} />
-          <span className="text-[9px] font-bold">Menú / Precios</span>
+          <Tag size={15} />
+          <span className="text-[8px] font-bold">Carta</span>
         </button>
 
         <button 
           onClick={() => setActiveSubTab("orders")}
           className={`flex flex-col items-center space-y-0.5 relative transition-colors ${activeSubTab === "orders" ? "text-[#ffd400] font-extrabold" : "text-purple-300 hover:text-white"}`}
         >
-          <ShoppingBag size={16} />
-          <span className="text-[9px] font-bold">Historial</span>
+          <ShoppingBag size={15} />
+          <span className="text-[8px] font-bold">Pedidos</span>
+        </button>
+
+        <button 
+          onClick={() => setActiveSubTab("couriers")}
+          className={`flex flex-col items-center space-y-0.5 relative transition-colors ${activeSubTab === "couriers" ? "text-[#ffd400] font-extrabold" : "text-purple-300 hover:text-white"}`}
+        >
+          <Truck size={15} />
+          <span className="text-[8px] font-bold">Repartidores</span>
+        </button>
+
+        <button 
+          onClick={() => setActiveSubTab("inventory")}
+          className={`flex flex-col items-center space-y-0.5 relative transition-colors ${activeSubTab === "inventory" ? "text-[#ffd400] font-extrabold" : "text-purple-300 hover:text-white"}`}
+        >
+          <Layers size={15} />
+          <span className="text-[8px] font-bold">Stock</span>
         </button>
 
         <button 
           onClick={() => setActiveSubTab("personalization")}
           className={`flex flex-col items-center space-y-0.5 relative transition-colors ${activeSubTab === "personalization" ? "text-[#ffd400] font-extrabold" : "text-purple-300 hover:text-white"}`}
         >
-          <Palette size={16} />
-          <span className="text-[9px] font-bold">Diseño</span>
+          <Palette size={15} />
+          <span className="text-[8px] font-bold">Branding</span>
         </button>
       </div>
 

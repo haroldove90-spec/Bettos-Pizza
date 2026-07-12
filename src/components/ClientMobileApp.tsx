@@ -25,7 +25,7 @@ import {
   Upload
 } from "lucide-react";
 import { Product, PizzaSize, Category, OrderItem, OrderType, Order } from "../types";
-import { getStoredProducts, getStoredOrders, saveOrders, generateOrderNumber } from "../utils/pizzaStore";
+import { getStoredProducts, getStoredOrders, saveOrders, generateOrderNumber, getStoredShippingZones, getStoredIngredients, saveIngredients } from "../utils/pizzaStore";
 
 interface ClientMobileAppProps {
   onOrderPlaced?: () => void;
@@ -34,6 +34,8 @@ interface ClientMobileAppProps {
 
 export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientMobileAppProps) {
   const [products, setProducts] = useState<Product[]>([]);
+  const [shippingZones, setShippingZones] = useState<any[]>([]);
+  const [selectedZoneId, setSelectedZoneId] = useState<string>("");
   const [activeTab, setActiveTab] = useState<string>("Especialidad");
   const [cart, setCart] = useState<OrderItem[]>(() => {
     try {
@@ -108,7 +110,7 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
     }
   };
 
-  const [branding] = useState(() => {
+  const [branding, setBranding] = useState(() => {
     const saved = localStorage.getItem("bettos_pizza_branding");
     if (saved) {
       try {
@@ -121,11 +123,32 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
   });
 
   useEffect(() => {
+    const handleBrandingUpdate = () => {
+      const saved = localStorage.getItem("bettos_pizza_branding");
+      if (saved) {
+        try {
+          setBranding(JSON.parse(saved));
+        } catch (e) {
+          console.error("Error updating client branding", e);
+        }
+      }
+    };
+    window.addEventListener("bettos_pizza_branding_update", handleBrandingUpdate);
+    return () => window.removeEventListener("bettos_pizza_branding_update", handleBrandingUpdate);
+  }, []);
+
+  useEffect(() => {
     localStorage.setItem("bettos_client_cart", JSON.stringify(cart));
   }, [cart]);
 
   useEffect(() => {
     setProducts(getStoredProducts().filter(p => p.isActive !== false));
+    
+    const zones = getStoredShippingZones().filter((z: any) => z.isActive !== false);
+    setShippingZones(zones);
+    if (zones.length > 0) {
+      setSelectedZoneId(zones[0].id);
+    }
     
     // Load existing orders of this client (simulated by finding ones placed in local session)
     const stored = getStoredOrders();
@@ -142,13 +165,41 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
         const ids = JSON.parse(clientSaved) as string[];
         setPlacedOrders(updatedOrders.filter(o => ids.includes(o.id)));
       }
+      const updatedZones = getStoredShippingZones().filter((z: any) => z.isActive !== false);
+      setShippingZones(updatedZones);
     };
 
     window.addEventListener("bettos_pizza_db_update", handleUpdate);
     return () => window.removeEventListener("bettos_pizza_db_update", handleUpdate);
   }, []);
 
+  const isProductOutOfStock = (pName: string) => {
+    try {
+      const stored = getStoredIngredients();
+      let requiredIngName = "Queso Mozzarella";
+      const nameLower = pName.toLowerCase();
+      if (nameLower.includes("pepperoni")) {
+        requiredIngName = "Pepperoni";
+      } else if (nameLower.includes("pastor") || nameLower.includes("carne")) {
+        requiredIngName = "Carne al Pastor";
+      } else if (nameLower.includes("piña") || nameLower.includes("hawaiana")) {
+        requiredIngName = "Piña";
+      } else if (nameLower.includes("jamón") || nameLower.includes("jamon")) {
+        requiredIngName = "Jamón";
+      }
+      
+      const ing = stored.find(i => i.name === requiredIngName);
+      return ing ? ing.stock <= 0 : false;
+    } catch {
+      return false;
+    }
+  };
+
   const handleOpenProduct = (product: Product) => {
+    if (isProductOutOfStock(product.name)) {
+      alert("Lo sentimos, este producto se encuentra temporalmente agotado por falta de ingredientes.");
+      return;
+    }
     setSelectedProduct(product);
     setSelectedSize(PizzaSize.GDE);
     setOrillaRellena(false);
@@ -205,6 +256,12 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
     return cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   };
 
+  const getSelectedShippingCost = () => {
+    if (orderType !== "Domicilio") return 0;
+    const zone = shippingZones.find(z => z.id === selectedZoneId);
+    return zone ? zone.cost : 0;
+  };
+
   const handlePlaceOrder = (e: React.FormEvent) => {
     e.preventDefault();
     if (cart.length === 0) return;
@@ -217,23 +274,67 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
       return;
     }
 
-    const total = getCartTotal();
-    if (orderType === "Domicilio" && total < 200) {
+    const totalCart = getCartTotal();
+    if (orderType === "Domicilio" && totalCart < 200) {
       alert("El consumo mínimo para servicio a domicilio es de $200 pesos.");
       return;
     }
 
+    // CHECK & DEDUCT INGREDIENTS
+    const storedIngredients = getStoredIngredients();
+    let outOfStockIngredient: string | null = null;
+    const updatedIngredients = [...storedIngredients];
+
+    for (const item of cart) {
+      let requiredIngName = "Queso Mozzarella";
+      const nameLower = item.name.toLowerCase();
+      if (nameLower.includes("pepperoni")) {
+        requiredIngName = "Pepperoni";
+      } else if (nameLower.includes("pastor") || nameLower.includes("carne")) {
+        requiredIngName = "Carne al Pastor";
+      } else if (nameLower.includes("piña") || nameLower.includes("hawaiana")) {
+        requiredIngName = "Piña";
+      } else if (nameLower.includes("jamón") || nameLower.includes("jamon")) {
+        requiredIngName = "Jamón";
+      }
+
+      const ing = updatedIngredients.find(i => i.name === requiredIngName);
+      if (ing) {
+        const requiredQty = item.quantity;
+        if (ing.stock < requiredQty) {
+          outOfStockIngredient = requiredIngName;
+          break;
+        } else {
+          ing.stock -= requiredQty;
+        }
+      }
+    }
+
+    if (outOfStockIngredient) {
+      alert(`Lo sentimos, nos hemos quedado sin stock de "${outOfStockIngredient}" para surtir tu pedido. Por favor reduce las porciones o elige otra opción.`);
+      return;
+    }
+
+    // Deduct stock and save
+    saveIngredients(updatedIngredients);
+
+    const shippingCost = getSelectedShippingCost();
+    const chosenZone = shippingZones.find(z => z.id === selectedZoneId);
+
     const newOrder: Order = {
       id: "ord_" + Date.now(),
       orderNumber: generateOrderNumber(),
+      createdAt: new Date().toISOString(),
       timestamp: new Date().toISOString(),
       items: cart,
-      total,
+      total: totalCart + shippingCost,
       status: "Pendiente",
       type: orderType,
       customerName,
       customerPhone,
-      customerAddress: orderType === "Domicilio" ? customerAddress : undefined,
+      customerAddress: orderType === "Domicilio" ? customerAddress : "Recoge en Sucursal",
+      shippingZone: orderType === "Domicilio" ? (chosenZone ? `${chosenZone.name} (${chosenZone.distance})` : "Domicilio") : undefined,
+      shippingCost: orderType === "Domicilio" ? shippingCost : 0,
       paymentMethod
     };
 
@@ -252,6 +353,9 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
     setCart([]);
     setViewState("status");
     playPing();
+
+    // Broadcast database update event
+    window.dispatchEvent(new CustomEvent("bettos_pizza_db_update"));
 
     if (onOrderPlaced) onOrderPlaced();
   };
@@ -652,52 +756,77 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
 
                 {/* Product Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                  {filteredProducts.map(product => (
-                    <div 
-                      key={product.id}
-                      onClick={() => handleOpenProduct(product)}
-                      className="bg-white rounded-2xl p-4 md:p-5 border border-slate-200/70 hover:border-purple-400 hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 group relative overflow-hidden shadow-xs"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between gap-2 mb-1.5">
-                          <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md uppercase">
-                            {product.category}
-                          </span>
-                          {product.category === "Especialidad" && (
-                            <span className="text-[10px] font-black text-red-600 bg-red-50 px-2 py-0.5 rounded-md uppercase">
-                              2x1
+                  {filteredProducts.map(product => {
+                    const isOutOfStock = isProductOutOfStock(product.name);
+                    return (
+                      <div 
+                        key={product.id}
+                        onClick={() => {
+                          if (isOutOfStock) {
+                            alert("Este producto no está disponible en este momento por falta de ingredientes.");
+                          } else {
+                            handleOpenProduct(product);
+                          }
+                        }}
+                        className={`bg-white rounded-2xl p-4 md:p-5 border hover:shadow-md transition-all duration-200 cursor-pointer flex flex-col justify-between gap-3 group relative overflow-hidden shadow-xs ${
+                          isOutOfStock 
+                            ? "opacity-60 border-slate-200 saturate-50 cursor-not-allowed" 
+                            : "border-slate-200/70 hover:border-purple-400"
+                        }`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between gap-2 mb-1.5">
+                            <span className="text-[10px] font-bold text-purple-700 bg-purple-50 px-2 py-0.5 rounded-md uppercase">
+                              {product.category}
                             </span>
-                          )}
+                            {isOutOfStock ? (
+                              <span className="text-[10px] font-black text-red-600 bg-red-100 border border-red-200 px-2.5 py-0.5 rounded-md uppercase animate-pulse">
+                                AGOTADO
+                              </span>
+                            ) : (
+                              product.category === "Especialidad" && (
+                                <span className="text-[10px] font-black text-red-600 bg-red-50 px-2 py-0.5 rounded-md uppercase">
+                                  2x1
+                                </span>
+                              )
+                            )}
+                          </div>
+                          <h4 className="font-display font-bold text-sm md:text-base text-slate-900 group-hover:text-purple-900 transition-colors">
+                            {product.name}
+                          </h4>
+                          <p className="text-xs text-slate-500 mt-1 line-clamp-3 leading-relaxed">
+                            {product.description}
+                          </p>
                         </div>
-                        <h4 className="font-display font-bold text-sm md:text-base text-slate-900 group-hover:text-purple-900 transition-colors">
-                          {product.name}
-                        </h4>
-                        <p className="text-xs text-slate-500 mt-1 line-clamp-3 leading-relaxed">
-                          {product.description}
-                        </p>
-                      </div>
 
-                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
-                        <div>
-                          <span className="text-[10px] text-slate-400 block font-medium">Precio</span>
-                          {product.prices ? (
-                            <span className="text-sm md:text-base font-extrabold text-red-600">
-                              Desde ${product.prices[PizzaSize.CH].standard}
-                            </span>
+                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-100">
+                          <div>
+                            <span className="text-[10px] text-slate-400 block font-medium">Precio</span>
+                            {product.prices ? (
+                              <span className="text-sm md:text-base font-extrabold text-red-600">
+                                Desde ${product.prices[PizzaSize.CH].standard}
+                              </span>
+                            ) : (
+                              <span className="text-sm md:text-base font-extrabold text-red-600">
+                                ${product.price}
+                              </span>
+                            )}
+                          </div>
+
+                          {isOutOfStock ? (
+                            <div className="px-3.5 py-1.5 rounded-xl bg-slate-100 text-slate-400 flex items-center space-x-1 text-xs font-bold transition-all shadow-xs">
+                              <span>Agotado</span>
+                            </div>
                           ) : (
-                            <span className="text-sm md:text-base font-extrabold text-red-600">
-                              ${product.price}
-                            </span>
+                            <div className="px-3.5 py-1.5 rounded-xl bg-slate-100 group-hover:bg-[#ffd400] text-slate-700 group-hover:text-slate-950 flex items-center space-x-1 text-xs font-bold transition-all shadow-xs">
+                              <Plus size={14} />
+                              <span>Agregar</span>
+                            </div>
                           )}
                         </div>
-
-                        <div className="px-3.5 py-1.5 rounded-xl bg-slate-100 group-hover:bg-[#ffd400] text-slate-700 group-hover:text-slate-950 flex items-center space-x-1 text-xs font-bold transition-all shadow-xs">
-                          <Plus size={14} />
-                          <span>Agregar</span>
-                        </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
 
                   {filteredProducts.length === 0 && (
                     <div className="col-span-full text-center py-16 bg-white rounded-2xl border border-slate-200 text-slate-400 text-xs font-medium">
@@ -899,17 +1028,37 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
                           <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: "auto" }}
-                            className="overflow-hidden space-y-1"
+                            className="overflow-hidden space-y-3"
                           >
-                            <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide">Dirección de Entrega</label>
-                            <textarea 
-                              required
-                              rows={2.5}
-                              placeholder="Calle, Número, Colonia, Entre calles y Referencias para el repartidor..."
-                              value={customerAddress}
-                              onChange={(e) => setCustomerAddress(e.target.value)}
-                              className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:outline-none focus:border-purple-600 focus:bg-white transition-all font-medium"
-                            />
+                            <div className="space-y-1">
+                              <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide">Dirección de Entrega</label>
+                              <textarea 
+                                required
+                                rows={2.5}
+                                placeholder="Calle, Número, Colonia, Entre calles y Referencias para el repartidor..."
+                                value={customerAddress}
+                                onChange={(e) => setCustomerAddress(e.target.value)}
+                                className="w-full bg-slate-50 border border-slate-200 rounded-xl p-2.5 text-xs focus:outline-none focus:border-purple-600 focus:bg-white transition-all font-medium"
+                              />
+                            </div>
+
+                            {shippingZones.length > 0 && (
+                              <div className="space-y-1">
+                                <label className="block text-[10px] font-bold text-slate-500 uppercase tracking-wide">Zona de Envío / Distancia</label>
+                                <select
+                                  required
+                                  value={selectedZoneId}
+                                  onChange={(e) => setSelectedZoneId(e.target.value)}
+                                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs focus:outline-none focus:border-purple-600 focus:bg-white transition-all font-medium font-sans text-slate-800"
+                                >
+                                  {shippingZones.map(zone => (
+                                    <option key={zone.id} value={zone.id}>
+                                      {zone.name} ({zone.distance}) — ${zone.cost} MXN
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+                            )}
                           </motion.div>
                         )}
 
@@ -933,12 +1082,14 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
                           {orderType === "Domicilio" && (
                             <div className="flex justify-between text-slate-500">
                               <span>Envío a domicilio:</span>
-                              <span className="text-green-600 font-bold bg-green-50 px-2 py-0.5 rounded text-[10px]">¡SIN COSTO!</span>
+                              <span className="text-purple-700 font-bold bg-purple-50 px-2 py-0.5 rounded text-[10px]">
+                                {getSelectedShippingCost() > 0 ? `$${getSelectedShippingCost()} MXN` : "¡GRATIS!"}
+                              </span>
                             </div>
                           )}
                           <div className="flex justify-between font-bold text-slate-900 border-t border-slate-200/80 pt-2 mt-1.5 text-sm">
                             <span>Total a pagar:</span>
-                            <span className="text-red-600 text-base font-black">${getCartTotal()}</span>
+                            <span className="text-red-600 text-base font-black">${getCartTotal() + getSelectedShippingCost()}</span>
                           </div>
                         </div>
 

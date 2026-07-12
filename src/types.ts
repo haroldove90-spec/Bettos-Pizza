@@ -65,6 +65,7 @@ export interface Order {
   id: string;
   orderNumber: string;
   timestamp: string;
+  createdAt?: string;
   items: OrderItem[];
   total: number;
   status: OrderStatus;
@@ -72,6 +73,8 @@ export interface Order {
   customerName: string;
   customerPhone?: string;
   customerAddress?: string;
+  shippingZone?: string;
+  shippingCost?: number;
   paymentMethod: "Efectivo" | "Tarjeta" | "Transferencia";
   sellerId?: string; // If placed by POS
   deliveryManId?: string; // If delivered by Mensajero
@@ -85,4 +88,29 @@ export interface StoreStats {
   totalOrders: number;
   pendingOrders: number;
   completedOrders: number;
+}
+
+export interface Courier {
+  id: string;
+  name: string;
+  phone: string;
+  vehicle: "🛵 Motocicleta" | "🚲 Bicicleta" | "🚗 Automóvil";
+  status: "Disponible" | "En Ruta" | "Inactivo";
+  avatar: string;
+}
+
+export interface IngredientInventory {
+  id: string;
+  name: string;
+  stock: number;
+  unit: string;
+  minStock: number;
+}
+
+export interface ShippingZone {
+  id: string;
+  name: string;
+  distance: string;
+  cost: number;
+  isActive: boolean;
 }
