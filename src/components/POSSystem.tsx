@@ -37,7 +37,14 @@ export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProp
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
-  const [cart, setCart] = useState<OrderItem[]>([]);
+  const [cart, setCart] = useState<OrderItem[]>(() => {
+    try {
+      const saved = localStorage.getItem("bettos_pos_cart");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [mobileTab, setMobileTab] = useState<"menu" | "cart">("menu");
   
   // Checkout detail states
@@ -45,6 +52,11 @@ export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProp
   const [orderType, setOrderType] = useState<OrderType>("POS Mesa");
   const [paymentMethod, setPaymentMethod] = useState<"Efectivo" | "Tarjeta" | "Transferencia">("Efectivo");
   const [lastPlacedOrder, setLastPlacedOrder] = useState<Order | null>(null);
+
+  // Persist POS cart
+  useEffect(() => {
+    localStorage.setItem("bettos_pos_cart", JSON.stringify(cart));
+  }, [cart]);
 
   // Load products
   useEffect(() => {

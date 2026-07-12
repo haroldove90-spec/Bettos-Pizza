@@ -31,8 +31,18 @@ import { getStoredOrders, resetToInitial } from "./utils/pizzaStore";
 
 export default function App() {
   // Active viewing mode: can be "HOME", "MULTIPANEL", or individual roles (Role.CLIENTE, Role.VENDEDOR, Role.COCINA, Role.ADMIN)
-  const [viewMode, setViewMode] = useState<"HOME" | "MULTIPANEL" | Role>("HOME");
+  const [viewMode, setViewMode] = useState<"HOME" | "MULTIPANEL" | Role>(() => {
+    const saved = localStorage.getItem("bettos_pizza_view_mode");
+    if (saved && (saved === "HOME" || saved === "MULTIPANEL" || Object.values(Role).includes(saved as Role))) {
+      return saved as "HOME" | "MULTIPANEL" | Role;
+    }
+    return "HOME";
+  });
   const [ordersCount, setOrdersCount] = useState<number>(0);
+
+  useEffect(() => {
+    localStorage.setItem("bettos_pizza_view_mode", viewMode);
+  }, [viewMode]);
 
   useEffect(() => {
     // Read total order count for notification badge
@@ -58,7 +68,7 @@ export default function App() {
 
   return (
     <div className={`bg-slate-950 flex flex-col pizza-gradient text-slate-100 select-none animate-fadeIn ${
-      viewMode === "HOME" || viewMode === Role.CLIENTE ? "min-h-screen" : "h-screen overflow-hidden"
+      viewMode === "HOME" || viewMode === Role.CLIENTE ? "min-h-screen" : "h-[100dvh] overflow-hidden"
     }`}>
       
       {/* Main Workspace Frame */}

@@ -33,7 +33,14 @@ interface ClientMobileAppProps {
 export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientMobileAppProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [activeTab, setActiveTab] = useState<string>("Especialidad");
-  const [cart, setCart] = useState<OrderItem[]>([]);
+  const [cart, setCart] = useState<OrderItem[]>(() => {
+    try {
+      const saved = localStorage.getItem("bettos_client_cart");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   
   // Customization state
@@ -71,6 +78,10 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
       console.log("Audio not supported or interaction blocked");
     }
   };
+
+  useEffect(() => {
+    localStorage.setItem("bettos_client_cart", JSON.stringify(cart));
+  }, [cart]);
 
   useEffect(() => {
     setProducts(getStoredProducts());
