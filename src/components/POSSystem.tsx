@@ -38,6 +38,7 @@ export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProp
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [cart, setCart] = useState<OrderItem[]>([]);
+  const [mobileTab, setMobileTab] = useState<"menu" | "cart">("menu");
   
   // Checkout detail states
   const [customerName, setCustomerName] = useState<string>("Mesa 1 / Mostrador");
@@ -203,24 +204,7 @@ export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProp
           </div>
         </div>
 
-        {/* Categories Tab selector */}
-        <div className="flex space-x-1 sm:space-x-1.5 overflow-x-auto max-w-[40%] sm:max-w-[50%] no-scrollbar shrink-0">
-          {["All", "Especialidad", "Un Solo Ingrediente", "Paquete", "Hamburguesa", "Empanada", "Spaghetti", "Bebida"].map(cat => (
-            <button
-              key={cat}
-              onClick={() => setSelectedCategory(cat)}
-              className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold whitespace-nowrap transition-all duration-150 ${
-                selectedCategory === cat
-                  ? "bg-[#ffd400] text-slate-900 shadow-md font-bold"
-                  : "bg-[#33113D] text-purple-200 hover:bg-[#481856]"
-              }`}
-            >
-              {cat === "All" ? "Todo" : cat}
-            </button>
-          ))}
-        </div>
-
-        {/* Quick info */}
+        {/* Quick info / Action */}
         <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
           {onBackToHome && (
             <button
@@ -242,29 +226,77 @@ export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProp
         </div>
       </div>
 
+      {/* Mobile Tab Switcher */}
+      <div className="flex md:hidden bg-[#240e29] border-b border-purple-950/55 p-2 gap-2 shrink-0">
+        <button
+          onClick={() => setMobileTab("menu")}
+          className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
+            mobileTab === "menu"
+              ? "bg-[#ffd400] text-slate-950 font-extrabold shadow-sm"
+              : "bg-slate-800/40 text-purple-200 hover:bg-slate-800/60"
+          }`}
+        >
+          <Layers size={13} />
+          <span>Ver Menú</span>
+        </button>
+        <button
+          onClick={() => setMobileTab("cart")}
+          className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 relative ${
+            mobileTab === "cart"
+              ? "bg-[#ffd400] text-slate-950 font-extrabold shadow-sm"
+              : "bg-slate-800/40 text-purple-200 hover:bg-slate-800/60"
+          }`}
+        >
+          <ShoppingBag size={13} />
+          <span>Ver Orden</span>
+          {cart.length > 0 && (
+            <span className="bg-red-600 text-white text-[9px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border border-slate-950 shrink-0 ml-1">
+              {cart.reduce((a, b) => a + b.quantity, 0)}
+            </span>
+          )}
+        </button>
+      </div>
+
       {/* Main Workspace */}
       <div className="flex-1 flex overflow-hidden">
         
         {/* Left Side: Product Grid */}
-        <div className="flex-1 flex flex-col p-4 overflow-hidden">
+        <div className={`flex-1 flex flex-col p-3.5 sm:p-4 overflow-hidden ${mobileTab === "menu" ? "flex" : "hidden md:flex"}`}>
           {/* Search bar */}
-          <div className="relative mb-3.5">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={18} />
+          <div className="relative mb-2.5">
+            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" size={17} />
             <input
               type="text"
-              placeholder="Buscar por nombre, especialidad o ingrediente (ej: jamón, jalapeño)..."
+              placeholder="Buscar producto o ingrediente..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-slate-800/80 border border-slate-700/60 rounded-xl pl-11 pr-4 py-2.5 text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:border-purple-500 transition-all"
+              className="w-full bg-slate-800/80 border border-slate-700/60 rounded-xl pl-10 pr-4 py-2 text-xs sm:text-sm text-slate-100 placeholder-slate-400 focus:outline-none focus:border-purple-500 transition-all"
             />
             {searchQuery && (
               <button 
                 onClick={() => setSearchQuery("")}
-                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-xs text-slate-400 hover:text-slate-200"
+                className="absolute right-3.5 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 hover:text-slate-200 font-bold"
               >
                 Limpiar
               </button>
             )}
+          </div>
+
+          {/* Local Categories Filter Chips inside Left Workspace */}
+          <div className="flex space-x-1.5 overflow-x-auto pb-2.5 mb-1.5 no-scrollbar shrink-0">
+            {["All", "Especialidad", "Un Solo Ingrediente", "Paquete", "Hamburguesa", "Empanada", "Spaghetti", "Bebida"].map(cat => (
+              <button
+                key={cat}
+                onClick={() => setSelectedCategory(cat)}
+                className={`px-3 py-1.5 rounded-lg text-[10px] sm:text-xs font-bold whitespace-nowrap transition-all duration-150 cursor-pointer ${
+                  selectedCategory === cat
+                    ? "bg-[#ffd400] text-slate-900 shadow-sm font-black"
+                    : "bg-slate-800/90 text-slate-300 hover:bg-slate-700/80 border border-slate-700/40"
+                }`}
+              >
+                {cat === "All" ? "Todo" : cat}
+              </button>
+            ))}
           </div>
 
           {/* Grid Container */}
@@ -344,7 +376,7 @@ export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProp
         </div>
 
         {/* Right Side: POS Checkout panel / Cart */}
-        <div className="w-[380px] bg-[#1a0e1e] border-l border-purple-950/60 flex flex-col justify-between overflow-hidden">
+        <div className={`w-full md:w-[380px] bg-[#1a0e1e] md:border-l border-purple-950/60 flex flex-col justify-between overflow-hidden ${mobileTab === "cart" ? "flex" : "hidden md:flex"}`}>
           
           {/* Cart Header */}
           <div className="p-4 border-b border-purple-950/40 bg-purple-950/20">
