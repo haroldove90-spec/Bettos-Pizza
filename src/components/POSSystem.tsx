@@ -73,9 +73,9 @@ export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProp
 
   // Load products
   useEffect(() => {
-    setProducts(getStoredProducts());
+    setProducts(getStoredProducts().filter(p => p.isActive !== false));
     const handleUpdate = () => {
-      setProducts(getStoredProducts());
+      setProducts(getStoredProducts().filter(p => p.isActive !== false));
     };
     window.addEventListener("bettos_pizza_db_update", handleUpdate);
     return () => window.removeEventListener("bettos_pizza_db_update", handleUpdate);

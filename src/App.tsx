@@ -31,7 +31,33 @@ import DeliveryPanel from "./components/DeliveryPanel";
 import { Role } from "./types";
 import { getStoredOrders, resetToInitial } from "./utils/pizzaStore";
 
+export const INITIAL_BRANDING = {
+  appName: "Betto's Pizza",
+  logoUrl: "",
+  bgType: "gradient", // "color" | "gradient"
+  bgColor: "#0a070e",
+  bgGradientStart: "#1f0824",
+  bgGradientEnd: "#0d020e",
+  cardColor: "#160f1e",
+  accentColor: "#ffd400",
+  accentTextColor: "#0a070e",
+  textColor: "#f1f5f9",
+  headerColor: "#191122"
+};
+
 export default function App() {
+  const [branding, setBranding] = useState(() => {
+    const saved = localStorage.getItem("bettos_pizza_branding");
+    if (saved) {
+      try {
+        return { ...INITIAL_BRANDING, ...JSON.parse(saved) };
+      } catch {
+        return INITIAL_BRANDING;
+      }
+    }
+    return INITIAL_BRANDING;
+  });
+
   // Active viewing mode: can be "HOME", "MULTIPANEL", or individual roles (Role.CLIENTE, Role.VENDEDOR, Role.COCINA, Role.ADMIN, Role.MENSAJERO)
   const [viewMode, setViewMode] = useState<"HOME" | "MULTIPANEL" | Role>(() => {
     const saved = localStorage.getItem("bettos_pizza_view_mode");
@@ -46,6 +72,21 @@ export default function App() {
   useEffect(() => {
     localStorage.setItem("bettos_pizza_view_mode", viewMode);
   }, [viewMode]);
+
+  useEffect(() => {
+    const handleBrandingUpdate = () => {
+      const saved = localStorage.getItem("bettos_pizza_branding");
+      if (saved) {
+        try {
+          setBranding({ ...INITIAL_BRANDING, ...JSON.parse(saved) });
+        } catch (e) {
+          console.error("Error reading updated branding", e);
+        }
+      }
+    };
+    window.addEventListener("bettos_pizza_branding_update", handleBrandingUpdate);
+    return () => window.removeEventListener("bettos_pizza_branding_update", handleBrandingUpdate);
+  }, []);
 
   useEffect(() => {
     // Read total order count for notification badge
@@ -74,6 +115,93 @@ export default function App() {
     <div className={`bg-slate-950 flex flex-col pizza-gradient text-slate-100 select-none animate-fadeIn ${
       viewMode === "HOME" || viewMode === Role.CLIENTE ? "min-h-screen" : "h-[100dvh] overflow-hidden"
     }`}>
+      {/* Dynamic Branding Style Overrides */}
+      <style>{`
+        :root {
+          --app-bg: ${branding.bgType === 'color' ? branding.bgColor : `linear-gradient(135deg, ${branding.bgGradientStart} 0%, ${branding.bgGradientEnd} 100%)`};
+          --app-card: ${branding.cardColor};
+          --app-accent: ${branding.accentColor};
+          --app-accent-text: ${branding.accentTextColor || '#0a070e'};
+          --app-text: ${branding.textColor};
+          --app-header: ${branding.headerColor};
+        }
+        
+        /* Background Overrides */
+        body, .pizza-gradient, .bg-slate-950, .bg-slate-900, .bg-\\[\\#0a070e\\], .bg-\\[\\#0a0f1d\\], .bg-\\[\\#0d0714\\] {
+          background: ${branding.bgType === 'color' ? branding.bgColor : `linear-gradient(135deg, ${branding.bgGradientStart} 0%, ${branding.bgGradientEnd} 100%)`} !important;
+          background-image: ${branding.bgType === 'color' ? 'none' : `linear-gradient(135deg, ${branding.bgGradientStart} 0%, ${branding.bgGradientEnd} 100%)`} !important;
+        }
+        
+        /* Card Background Overrides */
+        .bg-\\[\\#160f1e\\], 
+        .bg-\\[\\#12192c\\]\\/60, 
+        .bg-\\[\\#12192c\\], 
+        .bg-\\[\\#111726\\], 
+        .bg-slate-900, 
+        .bg-slate-900\\/80, 
+        .bg-slate-800,
+        .bg-slate-800\\/60,
+        .bg-slate-800\\/40,
+        .bg-purple-950\\/15, 
+        .bg-purple-950\\/30, 
+        .bg-\\[\\#150a22\\], 
+        .bg-\\[\\#0f0717\\], 
+        .bg-\\[\\#1c1226\\],
+        .bg-\\[\\#160f1e\\]\\/85,
+        .bg-\\[\\#1e1428\\],
+        .bg-slate-900\\/60 {
+          background-color: ${branding.cardColor} !important;
+        }
+        
+        /* Header Background Overrides */
+        .bg-\\[\\#191122\\], 
+        .bg-\\[\\#2C0C30\\], 
+        .bg-\\[\\#150a22\\], 
+        .bg-\\[\\#111726\\], 
+        .bg-\\[\\#1a1122\\] {
+          background-color: ${branding.headerColor} !important;
+        }
+        
+        /* Accent Texts */
+        .text-\\[\\#ffd400\\], .text-yellow-400, .text-yellow-300, .group-hover\\:text-yellow-400:hover, .text-amber-400, .text-purple-300, .text-red-400 {
+          color: ${branding.accentColor} !important;
+        }
+        
+        /* Accent Backgrounds (such as primary buttons) */
+        .bg-\\[\\#ffd400\\], .bg-yellow-400, .bg-yellow-300, .yellow-accent, .hover\\:bg-yellow-400:hover, .bg-amber-500 {
+          background-color: ${branding.accentColor} !important;
+          color: ${branding.accentTextColor || '#0a070e'} !important;
+        }
+        
+        /* Make sure button icon children are colored properly in accent bg */
+        .bg-\\[\\#ffd400\\] svg, .bg-yellow-400 svg, .bg-yellow-300 svg, .yellow-accent svg {
+          stroke: ${branding.accentTextColor || '#0a070e'} !important;
+        }
+        
+        /* General Texts */
+        .text-slate-100, .text-slate-200, .text-slate-300, .text-white {
+          color: ${branding.textColor} !important;
+        }
+        
+        /* Secondary Dimmed Texts */
+        .text-slate-400, .text-slate-500, .text-purple-200 {
+          color: ${branding.textColor} !important;
+          opacity: 0.75;
+        }
+        
+        /* Accent borders */
+        .border-\\[\\#ffd400\\], .border-yellow-400, .border-yellow-500, .border-purple-950\\/40, .border-slate-800, .border-slate-700\\/40, .border-purple-950\\/60 {
+          border-color: ${branding.accentColor}40 !important; /* light alpha */
+        }
+        
+        /* Custom scrollbars */
+        ::-webkit-scrollbar-thumb {
+          background: ${branding.accentColor}4D !important;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+          background: ${branding.accentColor} !important;
+        }
+      `}</style>
       
       {/* Main Workspace Frame */}
       <main className="flex-1 flex flex-col min-h-0 relative">
@@ -88,14 +216,25 @@ export default function App() {
               exit={{ opacity: 0, y: -15 }}
               className="flex-1 flex flex-col items-center justify-center p-6 md:p-12 min-h-0"
             >
-              <div className="text-center mb-10 max-w-md">
-                <div className="inline-flex h-4 w-7 rounded overflow-hidden shadow-sm border border-white/20 mb-4 animate-pulse">
-                  <div className="w-1/3 bg-green-600 h-full"></div>
-                  <div className="w-1/3 bg-white h-full"></div>
-                  <div className="w-1/3 bg-red-600 h-full"></div>
-                </div>
+              <div className="text-center mb-10 max-w-md flex flex-col items-center justify-center">
+                {branding.logoUrl ? (
+                  <div className="mb-4 relative">
+                    <img 
+                      src={branding.logoUrl} 
+                      alt="Brand Logo" 
+                      className="max-h-28 w-auto object-contain rounded-2xl shadow-xl border border-white/10 p-2 bg-black/20"
+                      referrerPolicy="no-referrer"
+                    />
+                  </div>
+                ) : (
+                  <div className="inline-flex h-4 w-7 rounded overflow-hidden shadow-sm border border-white/20 mb-4 animate-pulse">
+                    <div className="w-1/3 bg-green-600 h-full"></div>
+                    <div className="w-1/3 bg-white h-full"></div>
+                    <div className="w-1/3 bg-red-600 h-full"></div>
+                  </div>
+                )}
                 <h1 className="font-display font-black text-4xl md:text-5xl text-yellow-400 tracking-tight leading-none uppercase">
-                  BETTO'S PIZZA
+                  {branding.appName || "BETTO'S PIZZA"}
                 </h1>
                 <p className="text-xs text-slate-400 uppercase tracking-widest font-semibold mt-3">
                   SISTEMA DE GESTIÓN DE ROLES

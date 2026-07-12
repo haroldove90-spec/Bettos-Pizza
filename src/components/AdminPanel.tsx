@@ -26,7 +26,11 @@ import {
   Home,
   LogOut,
   User,
-  Upload
+  Upload,
+  Palette,
+  Edit3,
+  Eye,
+  EyeOff
 } from "lucide-react";
 import { Product, Order, Category, PizzaSize } from "../types";
 import { getStoredProducts, saveProducts, getStoredOrders, saveOrders, resetToInitial } from "../utils/pizzaStore";
@@ -45,8 +49,8 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
   const [pendingCount, setPendingCount] = useState<number>(0);
   const [averageTicket, setAverageTicket] = useState<number>(0);
 
-  // Active view: "stats" or "products" or "orders"
-  const [activeSubTab, setActiveSubTab] = useState<"stats" | "products" | "orders">("stats");
+  // Active view: "stats" or "products" or "orders" or "personalization"
+  const [activeSubTab, setActiveSubTab] = useState<"stats" | "products" | "orders" | "personalization">("stats");
 
   // Admin Profile state
   const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
@@ -62,6 +66,7 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
 
   // Product Editor state
   const [showAddForm, setShowAddForm] = useState<boolean>(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [newProductName, setNewProductName] = useState<string>("");
   const [newProductDesc, setNewProductDesc] = useState<string>("");
   const [newProductCategory, setNewProductCategory] = useState<Category>("Especialidad");
@@ -79,6 +84,32 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
   const [famOrilla, setFamOrilla] = useState<number>(440);
   const [megaStandard, setMegaStandard] = useState<number>(600);
   const [megaOrilla, setMegaOrilla] = useState<number>(670);
+
+  // Personalization State
+  const [branding, setBranding] = useState(() => {
+    const saved = localStorage.getItem("bettos_pizza_branding");
+    const initial = {
+      appName: "Betto's Pizza",
+      logoUrl: "",
+      bgType: "gradient",
+      bgColor: "#0a070e",
+      bgGradientStart: "#1f0824",
+      bgGradientEnd: "#0d020e",
+      cardColor: "#160f1e",
+      accentColor: "#ffd400",
+      accentTextColor: "#0a070e",
+      textColor: "#f1f5f9",
+      headerColor: "#191122"
+    };
+    if (saved) {
+      try {
+        return { ...initial, ...JSON.parse(saved) };
+      } catch {
+        return initial;
+      }
+    }
+    return initial;
+  });
 
   // Initialize
   useEffect(() => {
@@ -124,37 +155,113 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
     }
   };
 
+  const handleStartEditProduct = (prod: Product) => {
+    setEditingProduct(prod);
+    setNewProductName(prod.name);
+    setNewProductDesc(prod.description);
+    setNewProductCategory(prod.category);
+    if (prod.prices) {
+      if (prod.prices[PizzaSize.CH]) {
+        setChStandard(prod.prices[PizzaSize.CH].standard);
+        setChOrilla(prod.prices[PizzaSize.CH].orillaRellena);
+      }
+      if (prod.prices[PizzaSize.MED]) {
+        setMedStandard(prod.prices[PizzaSize.MED].standard);
+        setMedOrilla(prod.prices[PizzaSize.MED].orillaRellena);
+      }
+      if (prod.prices[PizzaSize.GDE]) {
+        setGdeStandard(prod.prices[PizzaSize.GDE].standard);
+        setGdeOrilla(prod.prices[PizzaSize.GDE].orillaRellena);
+      }
+      if (prod.prices[PizzaSize.FAM]) {
+        setFamStandard(prod.prices[PizzaSize.FAM].standard);
+        setFamOrilla(prod.prices[PizzaSize.FAM].orillaRellena);
+      }
+      if (prod.prices[PizzaSize.MEGA]) {
+        setMegaStandard(prod.prices[PizzaSize.MEGA].standard);
+        setMegaOrilla(prod.prices[PizzaSize.MEGA].orillaRellena);
+      }
+    } else if (prod.price !== undefined) {
+      setNewProductFixedPrice(prod.price);
+    }
+    setShowAddForm(true);
+  };
+
+  const handleToggleActiveProduct = (id: string) => {
+    const updated = products.map(p => {
+      if (p.id === id) {
+        return { ...p, isActive: p.isActive === false ? true : false };
+      }
+      return p;
+    });
+    saveProducts(updated);
+    setProducts(updated);
+  };
+
   const handleAddProduct = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newProductName) return;
 
-    let newProd: Product = {
-      id: "prod_" + Date.now(),
-      name: newProductName,
-      description: newProductDesc,
-      category: newProductCategory
-    };
-
-    // If it's a pizza category, we assign customizable sizes
-    if (newProductCategory === "Especialidad" || newProductCategory === "Un Solo Ingrediente") {
-      newProd.prices = {
-        [PizzaSize.CH]: { standard: chStandard, orillaRellena: chOrilla },
-        [PizzaSize.MED]: { standard: medStandard, orillaRellena: medOrilla },
-        [PizzaSize.GDE]: { standard: gdeStandard, orillaRellena: gdeOrilla },
-        [PizzaSize.FAM]: { standard: famStandard, orillaRellena: famOrilla },
-        [PizzaSize.MEGA]: { standard: megaStandard, orillaRellena: megaOrilla }
-      };
+    if (editingProduct) {
+      const updated = products.map(p => {
+        if (p.id === editingProduct.id) {
+          const u: Product = {
+            ...p,
+            name: newProductName,
+            description: newProductDesc,
+            category: newProductCategory
+          };
+          if (newProductCategory === "Especialidad" || newProductCategory === "Un Solo Ingrediente") {
+            u.prices = {
+              [PizzaSize.CH]: { standard: chStandard, orillaRellena: chOrilla },
+              [PizzaSize.MED]: { standard: medStandard, orillaRellena: medOrilla },
+              [PizzaSize.GDE]: { standard: gdeStandard, orillaRellena: gdeOrilla },
+              [PizzaSize.FAM]: { standard: famStandard, orillaRellena: famOrilla },
+              [PizzaSize.MEGA]: { standard: megaStandard, orillaRellena: megaOrilla }
+            };
+            delete u.price;
+          } else {
+            u.price = newProductFixedPrice;
+            delete u.prices;
+          }
+          return u;
+        }
+        return p;
+      });
+      saveProducts(updated);
+      setProducts(updated);
     } else {
-      newProd.price = newProductFixedPrice;
-    }
+      let newProd: Product = {
+        id: "prod_" + Date.now(),
+        name: newProductName,
+        description: newProductDesc,
+        category: newProductCategory,
+        isActive: true
+      };
 
-    const updated = [newProd, ...products];
-    saveProducts(updated);
-    setProducts(updated);
+      // If it's a pizza category, we assign customizable sizes
+      if (newProductCategory === "Especialidad" || newProductCategory === "Un Solo Ingrediente") {
+        newProd.prices = {
+          [PizzaSize.CH]: { standard: chStandard, orillaRellena: chOrilla },
+          [PizzaSize.MED]: { standard: medStandard, orillaRellena: medOrilla },
+          [PizzaSize.GDE]: { standard: gdeStandard, orillaRellena: gdeOrilla },
+          [PizzaSize.FAM]: { standard: famStandard, orillaRellena: famOrilla },
+          [PizzaSize.MEGA]: { standard: megaStandard, orillaRellena: megaOrilla }
+        };
+      } else {
+        newProd.price = newProductFixedPrice;
+      }
+
+      const updated = [newProd, ...products];
+      saveProducts(updated);
+      setProducts(updated);
+    }
 
     // Reset Form
     setNewProductName("");
     setNewProductDesc("");
+    setNewProductFixedPrice(100);
+    setEditingProduct(null);
     setShowAddForm(false);
   };
 
@@ -197,7 +304,8 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
           {[
             { id: "stats", label: "Estadísticas" },
             { id: "products", label: "Menú" },
-            { id: "orders", label: "Historial" }
+            { id: "orders", label: "Historial" },
+            { id: "personalization", label: "Branding" }
           ].map(tab => (
             <button
               key={tab.id}
@@ -388,7 +496,14 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
               <div className="flex justify-between items-center">
                 <h3 className="font-display font-bold text-base text-slate-100">Administrar Menú / Carta</h3>
                 <button
-                  onClick={() => setShowAddForm(!showAddForm)}
+                  onClick={() => {
+                    if (showAddForm) {
+                      setEditingProduct(null);
+                      setNewProductName("");
+                      setNewProductDesc("");
+                    }
+                    setShowAddForm(!showAddForm);
+                  }}
                   className="bg-[#ffd400] text-slate-900 font-bold px-3.5 py-1.5 rounded-lg text-xs flex items-center space-x-1.5 hover:bg-yellow-400 transition-all"
                 >
                   {showAddForm ? <X size={14} /> : <PlusCircle size={14} />}
@@ -498,12 +613,26 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
                     </div>
                   )}
 
-                  <div className="md:col-span-3 flex justify-end">
+                  <div className="md:col-span-3 flex justify-end gap-2">
+                    {editingProduct && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setEditingProduct(null);
+                          setNewProductName("");
+                          setNewProductDesc("");
+                          setShowAddForm(false);
+                        }}
+                        className="bg-slate-700 hover:bg-slate-600 text-white font-bold px-4 py-1.5 rounded-lg text-xs"
+                      >
+                        Cancelar
+                      </button>
+                    )}
                     <button
                       type="submit"
-                      className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-5 py-2 rounded-lg"
+                      className="bg-emerald-500 hover:bg-emerald-400 text-white font-bold px-5 py-1.5 rounded-lg text-xs"
                     >
-                      Guardar en Menú
+                      {editingProduct ? "Actualizar Producto" : "Guardar en Menú"}
                     </button>
                   </div>
                 </motion.form>
@@ -524,10 +653,16 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
                     }
                   };
 
+                  const isInactive = p.isActive === false;
+
                   return (
                     <div 
                       key={p.id} 
-                      className="bg-[#160f1e]/85 hover:bg-[#1e1428] border border-purple-950/45 p-4 sm:p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all w-full shadow-md group relative overflow-hidden"
+                      className={`border p-4 sm:p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all w-full shadow-md group relative overflow-hidden ${
+                        isInactive
+                          ? "bg-slate-950/40 border-slate-900/60 opacity-60 hover:opacity-80"
+                          : "bg-[#160f1e]/85 hover:bg-[#1e1428] border-purple-950/45"
+                      }`}
                     >
                       {/* Left side: Icon, Name, Category and Description */}
                       <div className="flex items-start space-x-3.5 flex-1 min-w-0">
@@ -542,6 +677,11 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
                             <span className="text-[10px] tracking-wide font-mono bg-[#280c33] px-2.5 py-0.5 rounded-full text-purple-300 border border-purple-900/40 font-medium shrink-0">
                               {p.category}
                             </span>
+                            {isInactive && (
+                              <span className="text-[9px] font-bold tracking-wider uppercase bg-red-950/40 border border-red-900/40 text-red-400 px-2 rounded-full">
+                                INACTIVO
+                              </span>
+                            )}
                           </div>
                           <p className="text-[11px] sm:text-xs text-slate-400 leading-relaxed">
                             {p.description}
@@ -585,13 +725,35 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
                         </div>
 
                         {/* Action buttons */}
-                        <button
-                          onClick={() => handleDeleteProduct(p.id)}
-                          className="p-2 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded-xl transition-all border border-red-500/15"
-                          title="Eliminar del menú"
-                        >
-                          <Trash2 size={14} />
-                        </button>
+                        <div className="flex items-center space-x-2">
+                          <button
+                            onClick={() => handleToggleActiveProduct(p.id)}
+                            className={`p-2 rounded-xl transition-all border cursor-pointer ${
+                              p.isActive !== false 
+                                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/15 hover:bg-emerald-500 hover:text-white"
+                                : "bg-slate-800 text-slate-500 border-slate-700 hover:bg-slate-700 hover:text-slate-300"
+                            }`}
+                            title={p.isActive !== false ? "Desactivar Producto" : "Activar Producto"}
+                          >
+                            {p.isActive !== false ? <Eye size={14} /> : <EyeOff size={14} />}
+                          </button>
+
+                          <button
+                            onClick={() => handleStartEditProduct(p)}
+                            className="p-2 bg-amber-500/10 text-amber-400 hover:bg-amber-500 hover:text-white rounded-xl transition-all border border-amber-500/15 cursor-pointer"
+                            title="Editar Producto"
+                          >
+                            <Edit3 size={14} />
+                          </button>
+
+                          <button
+                            onClick={() => handleDeleteProduct(p.id)}
+                            className="p-2 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded-xl transition-all border border-red-500/15 cursor-pointer"
+                            title="Eliminar del menú"
+                          >
+                            <Trash2 size={14} />
+                          </button>
+                        </div>
                       </div>
                     </div>
                   );
@@ -707,6 +869,302 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
             </motion.div>
           )}
 
+          {/* PERSONALIZACIÓN (BRANDING) */}
+          {activeSubTab === "personalization" && (
+            <motion.div
+              key="personalization-view"
+              initial={{ opacity: 0, y: 15 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -15 }}
+              className="space-y-6 max-w-4xl mx-auto pb-10"
+            >
+              <div className="flex justify-between items-center border-b border-purple-950/40 pb-3">
+                <div>
+                  <h3 className="font-display font-black text-lg text-slate-100 flex items-center gap-2">
+                    <Palette className="text-yellow-400" size={20} />
+                    Personalización Visual
+                  </h3>
+                  <p className="text-xs text-purple-300 font-mono">Modifica colores, logos y textos de toda la plataforma en tiempo real.</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (confirm("¿Deseas restablecer el diseño original de la aplicación?")) {
+                      const initial = {
+                        appName: "Betto's Pizza",
+                        logoUrl: "",
+                        bgType: "gradient",
+                        bgColor: "#0a070e",
+                        bgGradientStart: "#1f0824",
+                        bgGradientEnd: "#0d020e",
+                        cardColor: "#160f1e",
+                        accentColor: "#ffd400",
+                        accentTextColor: "#0a070e",
+                        textColor: "#f1f5f9",
+                        headerColor: "#191122"
+                      };
+                      localStorage.setItem("bettos_pizza_branding", JSON.stringify(initial));
+                      setBranding(initial);
+                      window.dispatchEvent(new Event("bettos_pizza_branding_update"));
+                    }
+                  }}
+                  className="bg-slate-800 hover:bg-slate-700 text-slate-300 font-mono text-[10px] uppercase font-bold px-3 py-1.5 rounded-lg border border-slate-700/50 cursor-pointer"
+                >
+                  Restaurar Por Defecto
+                </button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                
+                {/* CONFIGURATION FORM */}
+                <div className="bg-[#160f1e]/80 border border-purple-950/60 p-5 rounded-2xl space-y-4 shadow-xl">
+                  <h4 className="font-bold text-xs uppercase tracking-widest text-[#ffd400] border-b border-purple-950/40 pb-2">Identidad de Marca</h4>
+                  
+                  <div className="space-y-3.5 text-xs">
+                    <div>
+                      <label className="block text-slate-300 font-bold mb-1">Nombre de la Aplicación</label>
+                      <input 
+                        type="text" 
+                        value={branding.appName}
+                        onChange={e => {
+                          const updated = { ...branding, appName: e.target.value };
+                          setBranding(updated);
+                        }}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 focus:outline-none focus:border-[#ffd400] text-slate-100"
+                        placeholder="Ej. Betto's Pizza"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-slate-300 font-bold mb-1">URL del Logo (Opcional)</label>
+                      <input 
+                        type="url" 
+                        value={branding.logoUrl}
+                        onChange={e => {
+                          const updated = { ...branding, logoUrl: e.target.value };
+                          setBranding(updated);
+                        }}
+                        className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 focus:outline-none focus:border-[#ffd400] text-slate-100 font-mono text-[11px]"
+                        placeholder="https://ejemplo.com/logo.png"
+                      />
+                      <p className="text-[10px] text-slate-500 mt-1">Sube una imagen y pega el enlace aquí. Se mostrará en el menú de bienvenida y los menús.</p>
+                    </div>
+                  </div>
+
+                  <h4 className="font-bold text-xs uppercase tracking-widest text-[#ffd400] border-b border-purple-950/40 pt-4 pb-2">Paleta de Colores</h4>
+                  
+                  <div className="space-y-3.5 text-xs">
+                    {/* Background Selection Type */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-1">Tipo de Fondo</label>
+                        <select
+                          value={branding.bgType}
+                          onChange={e => {
+                            const updated = { ...branding, bgType: e.target.value as any };
+                            setBranding(updated);
+                          }}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 focus:outline-none focus:border-[#ffd400] text-slate-100"
+                        >
+                          <option value="color">Color Sólido</option>
+                          <option value="gradient">Gradiente Diagonal</option>
+                        </select>
+                      </div>
+
+                      {branding.bgType === 'color' ? (
+                        <div>
+                          <label className="block text-slate-300 font-bold mb-1">Color de Fondo</label>
+                          <div className="flex items-center space-x-2 bg-slate-900 border border-slate-800 rounded-lg p-1.5">
+                            <input 
+                              type="color" 
+                              value={branding.bgColor}
+                              onChange={e => setBranding({ ...branding, bgColor: e.target.value })}
+                              className="w-8 h-8 rounded cursor-pointer bg-transparent border-0"
+                            />
+                            <span className="font-mono text-[11px] uppercase">{branding.bgColor}</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="grid grid-cols-2 gap-2">
+                          <div>
+                            <label className="block text-[10px] text-slate-400 mb-0.5">Inicio Gradiente</label>
+                            <input 
+                              type="color" 
+                              value={branding.bgGradientStart}
+                              onChange={e => setBranding({ ...branding, bgGradientStart: e.target.value })}
+                              className="w-full h-8 rounded cursor-pointer bg-transparent border-0"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[10px] text-slate-400 mb-0.5">Fin Gradiente</label>
+                            <input 
+                              type="color" 
+                              value={branding.bgGradientEnd}
+                              onChange={e => setBranding({ ...branding, bgGradientEnd: e.target.value })}
+                              className="w-full h-8 rounded cursor-pointer bg-transparent border-0"
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Accent and Accent Text */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-1">Color de Acento (Botones/Títulos)</label>
+                        <div className="flex items-center space-x-2 bg-slate-900 border border-slate-800 rounded-lg p-1.5">
+                          <input 
+                            type="color" 
+                            value={branding.accentColor}
+                            onChange={e => setBranding({ ...branding, accentColor: e.target.value })}
+                            className="w-8 h-8 rounded cursor-pointer bg-transparent border-0"
+                          />
+                          <span className="font-mono text-[11px] uppercase">{branding.accentColor}</span>
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-1">Texto en Botón de Acento</label>
+                        <select
+                          value={branding.accentTextColor}
+                          onChange={e => setBranding({ ...branding, accentTextColor: e.target.value })}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 mt-1 focus:outline-none focus:border-[#ffd400] text-slate-100"
+                        >
+                          <option value="#0a070e">Oscuro (Fondo Claro)</option>
+                          <option value="#ffffff">Claro (Fondo Oscuro)</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Card and Header Colors */}
+                    <div className="grid grid-cols-3 gap-2">
+                      <div>
+                        <label className="block text-[10px] text-slate-300 font-bold mb-1">Color de Tarjeta</label>
+                        <input 
+                          type="color" 
+                          value={branding.cardColor}
+                          onChange={e => setBranding({ ...branding, cardColor: e.target.value })}
+                          className="w-full h-8 rounded cursor-pointer bg-transparent border-0"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-300 font-bold mb-1">Color de Cabecera</label>
+                        <input 
+                          type="color" 
+                          value={branding.headerColor}
+                          onChange={e => setBranding({ ...branding, headerColor: e.target.value })}
+                          className="w-full h-8 rounded cursor-pointer bg-transparent border-0"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-slate-300 font-bold mb-1">Color del Texto</label>
+                        <input 
+                          type="color" 
+                          value={branding.textColor}
+                          onChange={e => setBranding({ ...branding, textColor: e.target.value })}
+                          className="w-full h-8 rounded cursor-pointer bg-transparent border-0"
+                        />
+                      </div>
+                    </div>
+
+                  </div>
+
+                  {/* Actions buttons */}
+                  <div className="pt-4 flex justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        localStorage.setItem("bettos_pizza_branding", JSON.stringify(branding));
+                        window.dispatchEvent(new Event("bettos_pizza_branding_update"));
+                        alert("¡Diseño guardado y aplicado a toda la aplicación con éxito!");
+                      }}
+                      className="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-extrabold px-6 py-2.5 rounded-xl text-xs flex items-center space-x-1.5 transition-all shadow-md cursor-pointer"
+                    >
+                      <Check size={14} />
+                      <span>Aplicar y Guardar Cambios</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* VISUAL LIVE PREVIEW CARD */}
+                <div className="space-y-4">
+                  <h4 className="font-bold text-xs uppercase tracking-widest text-[#ffd400]">Vista Previa En Vivo</h4>
+                  
+                  {/* Container styled in real-time with selected values */}
+                  <div 
+                    style={{
+                      background: branding.bgType === 'color' ? branding.bgColor : `linear-gradient(135deg, ${branding.bgGradientStart} 0%, ${branding.bgGradientEnd} 100%)`,
+                      color: branding.textColor
+                    }}
+                    className="border border-white/10 rounded-2xl p-6 shadow-2xl space-y-4 transition-all"
+                  >
+                    {/* Header preview */}
+                    <div 
+                      style={{ backgroundColor: branding.headerColor }} 
+                      className="p-3 rounded-xl flex items-center justify-between border border-white/5 shadow-inner"
+                    >
+                      <div className="flex items-center space-x-2">
+                        {branding.logoUrl ? (
+                          <img src={branding.logoUrl} className="w-6 h-6 object-contain rounded" alt="logo" referrerPolicy="no-referrer" />
+                        ) : (
+                          <span className="text-sm">🍕</span>
+                        )}
+                        <span className="font-bold text-xs font-display">{branding.appName}</span>
+                      </div>
+                      <span className="text-[9px] font-mono opacity-60">MODO CLIENTE</span>
+                    </div>
+
+                    {/* Card previews inside the background */}
+                    <div 
+                      style={{ backgroundColor: branding.cardColor, color: branding.textColor }}
+                      className="p-4 rounded-xl border border-white/5 space-y-2.5 shadow-md"
+                    >
+                      <div className="flex justify-between items-start">
+                        <div>
+                          <h5 className="font-bold text-xs" style={{ color: branding.textColor }}>Pizza Mexicana Tradicional</h5>
+                          <p className="text-[10px] opacity-70 mt-0.5">Frijoles, chorizo, jalapeño fresco y cebolla dorada...</p>
+                        </div>
+                        <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded" style={{ backgroundColor: branding.accentColor, color: branding.accentTextColor }}>
+                          $190
+                        </span>
+                      </div>
+
+                      <div className="flex justify-between items-center pt-2 border-t border-white/10">
+                        <span className="text-[9px] opacity-50">Seleccionar Tamaño:</span>
+                        <div className="flex space-x-1">
+                          {['CH', 'MED', 'GDE'].map(sz => (
+                            <span 
+                              key={sz} 
+                              className="text-[9px] px-2 py-0.5 rounded border border-white/10 cursor-pointer"
+                              style={sz === 'GDE' ? { backgroundColor: branding.accentColor, color: branding.accentTextColor, borderColor: branding.accentColor } : {}}
+                            >
+                              {sz}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Interactive Button preview */}
+                    <button 
+                      type="button"
+                      style={{ backgroundColor: branding.accentColor, color: branding.accentTextColor }}
+                      className="w-full py-2.5 rounded-xl font-bold text-xs uppercase shadow-md transition-all flex items-center justify-center space-x-2 shrink-0 cursor-pointer"
+                    >
+                      <span>Ordenar Ahora</span>
+                    </button>
+                  </div>
+
+                  <div className="bg-slate-900/40 border border-slate-800 p-4 rounded-xl text-xs text-slate-400 space-y-1">
+                    <p className="font-bold text-[#ffd400]">💡 ¿Cómo funciona?</p>
+                    <p>Al hacer clic en <strong>"Aplicar y Guardar Cambios"</strong>, el sistema generará una hoja de estilos dinámica que se inyecta en toda la aplicación. Los clientes y el punto de venta (POS) verán los nuevos colores y el nuevo logotipo de inmediato sin necesidad de recargar la página.</p>
+                  </div>
+                </div>
+
+              </div>
+            </motion.div>
+          )}
+
         </AnimatePresence>
       </div>
 
@@ -734,6 +1192,14 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
         >
           <ShoppingBag size={16} />
           <span className="text-[9px] font-bold">Historial</span>
+        </button>
+
+        <button 
+          onClick={() => setActiveSubTab("personalization")}
+          className={`flex flex-col items-center space-y-0.5 relative transition-colors ${activeSubTab === "personalization" ? "text-[#ffd400] font-extrabold" : "text-purple-300 hover:text-white"}`}
+        >
+          <Palette size={16} />
+          <span className="text-[9px] font-bold">Diseño</span>
         </button>
       </div>
 

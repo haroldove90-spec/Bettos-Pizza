@@ -108,12 +108,24 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
     }
   };
 
+  const [branding] = useState(() => {
+    const saved = localStorage.getItem("bettos_pizza_branding");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+
   useEffect(() => {
     localStorage.setItem("bettos_client_cart", JSON.stringify(cart));
   }, [cart]);
 
   useEffect(() => {
-    setProducts(getStoredProducts());
+    setProducts(getStoredProducts().filter(p => p.isActive !== false));
     
     // Load existing orders of this client (simulated by finding ones placed in local session)
     const stored = getStoredOrders();
@@ -124,7 +136,7 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
     }
 
     const handleUpdate = () => {
-      setProducts(getStoredProducts());
+      setProducts(getStoredProducts().filter(p => p.isActive !== false));
       const updatedOrders = getStoredOrders();
       if (clientSaved) {
         const ids = JSON.parse(clientSaved) as string[];
@@ -267,11 +279,22 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
         <div className="space-y-6">
           {/* Logo & Branding */}
           <div className="flex items-center space-x-3 py-2 border-b border-purple-950/40">
-            <div className="w-10 h-10 bg-yellow-400 rounded-full border-2 border-red-500 flex items-center justify-center shadow-md font-bold text-red-600 text-sm tracking-tighter shrink-0">
-              BETTO
-            </div>
+            {branding && branding.logoUrl ? (
+              <img 
+                src={branding.logoUrl} 
+                alt="Logo" 
+                className="w-10 h-10 object-contain rounded-lg bg-black/10 border border-white/10"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-10 h-10 bg-yellow-400 rounded-full border-2 border-red-500 flex items-center justify-center shadow-md font-bold text-red-600 text-sm tracking-tighter shrink-0">
+                BETTO
+              </div>
+            )}
             <div>
-              <h1 className="font-display font-extrabold text-base text-[#ffd400] tracking-tight leading-none">Betto's Pizza</h1>
+              <h1 className="font-display font-extrabold text-base text-[#ffd400] tracking-tight leading-none">
+                {branding ? branding.appName : "Betto's Pizza"}
+              </h1>
               <p className="text-[9px] text-yellow-300 bg-red-600/30 border border-red-600/50 rounded-full px-2 py-0.5 mt-1 font-bold inline-block">CLIENTE</p>
             </div>
           </div>
@@ -375,11 +398,22 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
         {/* Top Header - Visible on Mobile and Tablet (`md:hidden`), custom header style for clean visual */}
         <div className="bg-[#2C0C30] text-white px-4 py-3.5 shadow-md md:hidden flex justify-between items-center shrink-0">
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-yellow-400 rounded-full border border-red-500 flex items-center justify-center text-red-600 font-bold text-xs tracking-tighter">
-              BP
-            </div>
+            {branding && branding.logoUrl ? (
+              <img 
+                src={branding.logoUrl} 
+                alt="Logo" 
+                className="w-8 h-8 object-contain rounded-lg bg-black/10 border border-white/10"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="w-8 h-8 bg-yellow-400 rounded-full border border-red-500 flex items-center justify-center text-red-600 font-bold text-xs tracking-tighter">
+                BP
+              </div>
+            )}
             <div>
-              <h1 className="font-display font-extrabold text-xs sm:text-sm text-[#ffd400] leading-none">Betto's Pizza</h1>
+              <h1 className="font-display font-extrabold text-xs sm:text-sm text-[#ffd400] leading-none">
+                {branding ? branding.appName : "Betto's Pizza"}
+              </h1>
               <p className="text-[8px] text-purple-300 font-mono mt-0.5">CLIENTE</p>
             </div>
           </div>

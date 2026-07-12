@@ -43,6 +43,7 @@ export interface Product {
   ingredients?: string[];
   imageUrl?: string;
   isPromo?: boolean;
+  isActive?: boolean;
 }
 
 export interface OrderItem {
