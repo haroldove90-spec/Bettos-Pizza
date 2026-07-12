@@ -376,7 +376,7 @@ export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProp
         </div>
 
         {/* Right Side: POS Checkout panel / Cart */}
-        <div className={`w-full md:w-[380px] bg-[#1a0e1e] md:border-l border-purple-950/60 flex flex-col justify-between overflow-hidden ${mobileTab === "cart" ? "flex" : "hidden md:flex"}`}>
+        <div className={`w-full md:w-[380px] bg-[#1a0e1e] md:border-l border-purple-950/60 flex flex-col justify-between overflow-hidden ${mobileTab === "cart" ? "flex" : "hidden md:flex"} relative`}>
           
           {/* Cart Header */}
           <div className="p-4 border-b border-purple-950/40 bg-purple-950/20">
@@ -421,8 +421,8 @@ export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProp
             </div>
           </div>
 
-          {/* Cart items list */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          {/* Cart items list - padded heavily to prevent items from being hidden under the floating checkout card */}
+          <div className="flex-1 overflow-y-auto p-4 pb-[245px] sm:pb-[255px] md:pb-[265px] space-y-3 scrollbar-thin">
             {cart.map(item => (
               <div 
                 key={item.id} 
@@ -505,8 +505,8 @@ export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProp
             )}
           </div>
 
-          {/* Cart Footer / Totals and checkout */}
-          <div className="p-4 bg-purple-950/30 border-t border-purple-950/60 space-y-4">
+          {/* Floating/Sticky Cart Footer / Totals and checkout */}
+          <div className="absolute bottom-0 left-0 right-0 p-4 bg-[#140a18]/95 backdrop-blur-md border-t border-purple-950/80 rounded-t-2xl space-y-4 shadow-[0_-12px_32px_rgba(0,0,0,0.85)] z-20">
             
             {/* Payment Method toggle */}
             <div>

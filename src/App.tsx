@@ -57,7 +57,9 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 flex flex-col pizza-gradient text-slate-100 select-none animate-fadeIn">
+    <div className={`bg-slate-950 flex flex-col pizza-gradient text-slate-100 select-none animate-fadeIn ${
+      viewMode === "HOME" || viewMode === Role.CLIENTE ? "min-h-screen" : "h-screen overflow-hidden"
+    }`}>
       
       {/* Main Workspace Frame */}
       <main className="flex-1 flex flex-col min-h-0 relative">
@@ -200,28 +202,30 @@ export default function App() {
       </main>
 
       {/* Footer detailing addresses and quick transfer support info */}
-      <footer className="bg-slate-950 border-t border-slate-900/60 py-4 px-6 text-center text-[11px] text-slate-400 flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-        <p className="flex items-center justify-center md:justify-start">
-          <MapPin size={12} className="mr-1.5 text-red-500" />
-          <span>Sucursal Principal: Av. Sta Cecilia Mz. 6Lt. 26, Hugo Cervantes del Río (priv. Sta Cecilia y Circuito Chicoasen) Tlanepantla, Edo. de México</span>
-        </p>
-        <div className="flex items-center justify-center gap-3 font-medium text-slate-300">
-          {viewMode !== "HOME" && (
-            <button
-              onClick={() => setViewMode("HOME")}
-              className="px-2.5 py-1 rounded-lg bg-[#ffd400] hover:bg-yellow-300 text-slate-950 font-extrabold transition-all text-[10px] uppercase tracking-wider cursor-pointer mr-1 flex items-center space-x-1 shadow-md shrink-0"
-              title="Volver al menú de selección de roles"
-            >
-              <span>← Ver Otros Roles</span>
-            </button>
-          )}
-          <span className="flex items-center text-green-400"><Phone size={11} className="mr-1" /> 55 1326-5826</span>
-          <span>•</span>
-          <span className="text-[#ffd400]">Se Aceptan Transferencias</span>
-          <span>•</span>
-          <span className="text-slate-400">Consumo Mínimo Domicilio $200</span>
-        </div>
-      </footer>
+      {(viewMode === "HOME" || viewMode === Role.CLIENTE) && (
+        <footer className="bg-slate-950 border-t border-slate-900/60 py-4 px-6 text-center text-[11px] text-slate-400 flex flex-col md:flex-row md:items-center md:justify-between gap-2 shrink-0">
+          <p className="flex items-center justify-center md:justify-start">
+            <MapPin size={12} className="mr-1.5 text-red-500" />
+            <span>Sucursal Principal: Av. Sta Cecilia Mz. 6Lt. 26, Hugo Cervantes del Río (priv. Sta Cecilia y Circuito Chicoasen) Tlanepantla, Edo. de México</span>
+          </p>
+          <div className="flex items-center justify-center gap-3 font-medium text-slate-300">
+            {viewMode !== "HOME" && (
+              <button
+                onClick={() => setViewMode("HOME")}
+                className="px-2.5 py-1 rounded-lg bg-[#ffd400] hover:bg-yellow-300 text-slate-950 font-extrabold transition-all text-[10px] uppercase tracking-wider cursor-pointer mr-1 flex items-center space-x-1 shadow-md shrink-0"
+                title="Volver al menú de selección de roles"
+              >
+                <span>← Ver Otros Roles</span>
+              </button>
+            )}
+            <span className="flex items-center text-green-400"><Phone size={11} className="mr-1" /> 55 1326-5826</span>
+            <span>•</span>
+            <span className="text-[#ffd400]">Se Aceptan Transferencias</span>
+            <span>•</span>
+            <span className="text-slate-400">Consumo Mínimo Domicilio $200</span>
+          </div>
+        </footer>
+      )}
 
     </div>
   );
