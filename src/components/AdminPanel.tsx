@@ -22,12 +22,17 @@ import {
   Database,
   Tag,
   MapPin,
-  Calendar
+  Calendar,
+  Home
 } from "lucide-react";
 import { Product, Order, Category, PizzaSize } from "../types";
 import { getStoredProducts, saveProducts, getStoredOrders, saveOrders, resetToInitial } from "../utils/pizzaStore";
 
-export default function AdminPanel() {
+interface AdminPanelProps {
+  onBackToHome?: () => void;
+}
+
+export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [orders, setOrders] = useState<Order[]>([]);
   
@@ -194,14 +199,27 @@ export default function AdminPanel() {
         </div>
 
         {/* Action Trigger */}
-        <button
-          onClick={handleResetData}
-          className="text-[10px] font-bold text-red-400 hover:text-red-300 flex items-center space-x-1 border border-red-900/30 bg-red-950/10 hover:bg-red-950/40 px-2.5 py-1.5 rounded-lg transition-all"
-          title="Restaurar base de datos"
-        >
-          <Database size={11} />
-          <span className="hidden sm:inline">Restaurar Demo</span>
-        </button>
+        <div className="flex items-center space-x-2">
+          {onBackToHome && (
+            <button
+              onClick={onBackToHome}
+              className="text-[10px] font-bold text-yellow-400 hover:text-yellow-300 flex items-center space-x-1.5 border border-yellow-900/30 bg-yellow-950/10 hover:bg-yellow-950/20 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+              title="Volver al Inicio"
+            >
+              <Home size={11} />
+              <span>Inicio</span>
+            </button>
+          )}
+
+          <button
+            onClick={handleResetData}
+            className="text-[10px] font-bold text-red-400 hover:text-red-300 flex items-center space-x-1 border border-red-900/30 bg-red-950/10 hover:bg-red-950/40 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+            title="Restaurar base de datos"
+          >
+            <Database size={11} />
+            <span className="hidden sm:inline">Restaurar Demo</span>
+          </button>
+        </div>
       </div>
 
       {/* Main Container */}

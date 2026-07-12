@@ -18,12 +18,17 @@ import {
   Volume2, 
   VolumeX,
   MapPin,
-  FileText
+  FileText,
+  Home
 } from "lucide-react";
 import { Order, OrderStatus } from "../types";
 import { getStoredOrders, saveOrders } from "../utils/pizzaStore";
 
-export default function KitchenDisplay() {
+interface KitchenDisplayProps {
+  onBackToHome?: () => void;
+}
+
+export default function KitchenDisplay({ onBackToHome }: KitchenDisplayProps) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const previousOrdersCount = useRef<number>(0);
@@ -154,6 +159,17 @@ export default function KitchenDisplay() {
 
         {/* Audio control & Quick Trigger */}
         <div className="flex items-center space-x-3">
+          {onBackToHome && (
+            <button
+              onClick={onBackToHome}
+              className="px-3 py-1.5 rounded-lg bg-yellow-400/10 hover:bg-yellow-400/20 border border-yellow-400/20 text-yellow-400 text-xs font-bold transition-all flex items-center space-x-1 cursor-pointer mr-2"
+              title="Volver al Inicio"
+            >
+              <Home size={14} />
+              <span>Inicio</span>
+            </button>
+          )}
+
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
             className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all ${

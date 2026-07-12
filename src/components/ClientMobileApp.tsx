@@ -18,16 +18,18 @@ import {
   ArrowLeft, 
   Sparkles,
   Info,
-  Bike
+  Bike,
+  Home
 } from "lucide-react";
 import { Product, PizzaSize, Category, OrderItem, OrderType, Order } from "../types";
 import { getStoredProducts, getStoredOrders, saveOrders, generateOrderNumber } from "../utils/pizzaStore";
 
 interface ClientMobileAppProps {
   onOrderPlaced?: () => void;
+  onBackToHome?: () => void;
 }
 
-export default function ClientMobileApp({ onOrderPlaced }: ClientMobileAppProps) {
+export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientMobileAppProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [activeTab, setActiveTab] = useState<string>("Especialidad");
   const [cart, setCart] = useState<OrderItem[]>([]);
@@ -216,7 +218,7 @@ export default function ClientMobileApp({ onOrderPlaced }: ClientMobileAppProps)
   const promoProduct = products.find(p => p.isPromo);
 
   return (
-    <div className="w-full flex-1 bg-slate-50 text-slate-800 flex flex-col relative select-none rounded-2xl overflow-hidden shadow-xl border border-slate-200">
+    <div className="w-full flex-1 bg-slate-50 text-slate-800 flex flex-col relative select-none">
       
       {/* Pizzeria branding header */}
       <div className="bg-[#2C0C30] text-white px-4 md:px-6 py-3.5 shadow-md relative z-20 flex flex-col shrink-0">
@@ -237,6 +239,17 @@ export default function ClientMobileApp({ onOrderPlaced }: ClientMobileAppProps)
           </div>
           
           <div className="flex items-center space-x-2.5">
+            {onBackToHome && (
+              <button 
+                onClick={onBackToHome}
+                className="px-3 py-2 rounded-xl bg-purple-950/50 hover:bg-purple-900/60 border border-purple-800/40 text-slate-200 hover:text-white text-xs font-bold transition-all shadow-xs flex items-center space-x-1 cursor-pointer"
+                title="Volver al Inicio"
+              >
+                <Home size={14} />
+                <span className="hidden md:inline">Inicio</span>
+              </button>
+            )}
+
             <button 
               onClick={() => setViewState("status")}
               className={`relative px-3 py-2 rounded-xl transition-all flex items-center space-x-1.5 text-xs font-bold shadow-xs ${

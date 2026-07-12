@@ -21,16 +21,18 @@ import {
   List, 
   Sparkles,
   Printer,
-  ChevronDown
+  ChevronDown,
+  Home
 } from "lucide-react";
 import { Product, PizzaSize, Category, OrderItem, OrderType, Order } from "../types";
 import { getStoredProducts, getStoredOrders, saveOrders, generateOrderNumber } from "../utils/pizzaStore";
 
 interface POSSystemProps {
   onOrderPlaced?: () => void;
+  onBackToHome?: () => void;
 }
 
-export default function POSSystem({ onOrderPlaced }: POSSystemProps) {
+export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProps) {
   const [products, setProducts] = useState<Product[]>([]);
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
@@ -219,6 +221,17 @@ export default function POSSystem({ onOrderPlaced }: POSSystemProps) {
 
         {/* Quick info */}
         <div className="flex items-center space-x-4">
+          {onBackToHome && (
+            <button
+              onClick={onBackToHome}
+              className="px-3 py-1.5 rounded-lg bg-purple-950/40 hover:bg-purple-900/40 border border-purple-800/30 text-slate-200 hover:text-white text-xs font-bold transition-all flex items-center space-x-1 cursor-pointer"
+              title="Volver al Inicio"
+            >
+              <Home size={14} />
+              <span>Inicio</span>
+            </button>
+          )}
+
           <div className="text-right hidden sm:block">
             <p className="text-xs text-purple-200">Terminal #01</p>
             <p className="text-[9px] text-green-400 font-mono flex items-center justify-end">

@@ -59,43 +59,6 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-950 flex flex-col pizza-gradient text-slate-100 select-none animate-fadeIn">
       
-      {/* Sleek Navigation Header (Only visible when not on Home) */}
-      {viewMode !== "HOME" && (
-        <header className="bg-slate-900/90 backdrop-blur-md border-b border-slate-800/80 px-6 py-3.5 flex items-center justify-between z-40 sticky top-0 shadow-xl">
-          <button
-            onClick={() => setViewMode("HOME")}
-            className="flex items-center space-x-2 px-3.5 py-1.5 rounded-xl bg-slate-950 border border-slate-800 hover:border-slate-700 hover:bg-slate-900 text-slate-300 hover:text-white text-xs font-bold transition-all shadow-xs cursor-pointer"
-          >
-            <ArrowLeft size={14} />
-            <span>Volver al Inicio</span>
-          </button>
-          
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-yellow-400 border border-red-500 rounded-full flex items-center justify-center shadow-md font-display font-black text-red-600 text-[10px] tracking-tight shrink-0">
-              BP
-            </div>
-            <div className="flex flex-col items-end md:items-start">
-              <div className="flex items-center space-x-2">
-                <h2 className="font-display font-black text-xs md:text-sm text-yellow-400 uppercase tracking-tight leading-none">
-                  BETTO'S PIZZA
-                </h2>
-                <div className="flex h-2.5 w-4 rounded overflow-hidden shadow-xs border border-white/20 shrink-0">
-                  <div className="w-1/3 bg-green-600 h-full"></div>
-                  <div className="w-1/3 bg-white h-full"></div>
-                  <div className="w-1/3 bg-red-600 h-full"></div>
-                </div>
-              </div>
-              <span className="text-[9px] uppercase font-bold text-slate-400 tracking-wider mt-0.5">
-                {viewMode === Role.CLIENTE && "Móvil del Cliente"}
-                {viewMode === Role.VENDEDOR && "Punto de Venta (POS)"}
-                {viewMode === Role.COCINA && "Pantalla de Cocina"}
-                {viewMode === Role.ADMIN && "Panel de Administración"}
-              </span>
-            </div>
-          </div>
-        </header>
-      )}
-
       {/* Main Workspace Frame */}
       <main className="flex-1 flex flex-col min-h-0 relative">
         <AnimatePresence mode="wait">
@@ -188,12 +151,12 @@ export default function App() {
           {viewMode === Role.CLIENTE && (
             <motion.div
               key="client-view"
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.98 }}
-              className="flex-1 flex items-center justify-center p-6 overflow-y-auto"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex-1 flex flex-col min-h-0 w-full"
             >
-              <ClientMobileApp onOrderPlaced={handleOrderNotification} />
+              <ClientMobileApp onOrderPlaced={handleOrderNotification} onBackToHome={() => setViewMode("HOME")} />
             </motion.div>
           )}
 
@@ -203,9 +166,9 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex-1 flex flex-col"
+              className="flex-1 flex flex-col min-h-0 w-full"
             >
-              <POSSystem onOrderPlaced={handleOrderNotification} />
+              <POSSystem onOrderPlaced={handleOrderNotification} onBackToHome={() => setViewMode("HOME")} />
             </motion.div>
           )}
 
@@ -215,9 +178,9 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex-1 flex flex-col"
+              className="flex-1 flex flex-col min-h-0 w-full"
             >
-              <KitchenDisplay />
+              <KitchenDisplay onBackToHome={() => setViewMode("HOME")} />
             </motion.div>
           )}
 
@@ -227,9 +190,9 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex-1 flex flex-col"
+              className="flex-1 flex flex-col min-h-0 w-full"
             >
-              <AdminPanel />
+              <AdminPanel onBackToHome={() => setViewMode("HOME")} />
             </motion.div>
           )}
 
