@@ -509,52 +509,93 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
                 </motion.form>
               )}
 
-              {/* Table of products */}
-              <div className="bg-[#160f1e] rounded-2xl border border-purple-950/40 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-purple-950/30 text-purple-300 font-mono text-[9px] uppercase border-b border-purple-900/40">
-                        <th className="p-3">Nombre</th>
-                        <th className="p-3">Categoría</th>
-                        <th className="p-3">Descripción</th>
-                        <th className="p-3">Precio / Rangos</th>
-                        <th className="p-3 text-center">Acciones</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-purple-950/20">
-                      {products.map(p => (
-                        <tr key={p.id} className="hover:bg-purple-950/10">
-                          <td className="p-3 font-semibold text-slate-200">{p.name}</td>
-                          <td className="p-3">
-                            <span className="text-[10px] font-mono bg-[#280c33] px-2 py-0.5 rounded text-purple-300 border border-purple-900/30">
+              {/* Cards List of products - completely responsive, full width, no side scrolling */}
+              <div className="space-y-3.5">
+                {products.map(p => {
+                  const getCategoryIcon = (cat: Category) => {
+                    switch (cat) {
+                      case "Especialidad": return "🍕";
+                      case "Un Solo Ingrediente": return "🍕";
+                      case "Hamburguesa": return "🍔";
+                      case "Empanada": return "🥟";
+                      case "Spaghetti": return "🍝";
+                      case "Bebida": return "🥤";
+                      default: return "🍴";
+                    }
+                  };
+
+                  return (
+                    <div 
+                      key={p.id} 
+                      className="bg-[#160f1e]/85 hover:bg-[#1e1428] border border-purple-950/45 p-4 sm:p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all w-full shadow-md group relative overflow-hidden"
+                    >
+                      {/* Left side: Icon, Name, Category and Description */}
+                      <div className="flex items-start space-x-3.5 flex-1 min-w-0">
+                        <span className="text-2xl sm:text-3xl p-2.5 bg-purple-950/40 rounded-2xl border border-purple-900/30 shrink-0 select-none">
+                          {getCategoryIcon(p.category)}
+                        </span>
+                        <div className="space-y-1 flex-1 min-w-0">
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="font-display font-semibold text-sm sm:text-base text-slate-100 group-hover:text-yellow-400 transition-colors leading-snug">
+                              {p.name}
+                            </h4>
+                            <span className="text-[10px] tracking-wide font-mono bg-[#280c33] px-2.5 py-0.5 rounded-full text-purple-300 border border-purple-900/40 font-medium shrink-0">
                               {p.category}
                             </span>
-                          </td>
-                          <td className="p-3 text-slate-400 max-w-xs truncate">{p.description}</td>
-                          <td className="p-3 font-mono">
-                            {p.prices ? (
-                              <span className="text-[#ffd400] font-bold">
-                                CH: ${p.prices[PizzaSize.CH].standard} - MEGA: ${p.prices[PizzaSize.MEGA].standard}
-                              </span>
-                            ) : (
-                              <span>${p.price}</span>
-                            )}
-                          </td>
-                          <td className="p-3 text-center">
-                            <button
-                              onClick={() => handleDeleteProduct(p.id)}
-                              className="p-1.5 text-slate-400 hover:text-red-400 transition-colors"
-                              title="Eliminar del menú"
-                            >
-                              <Trash2 size={13} />
-                            </button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                          </div>
+                          <p className="text-[11px] sm:text-xs text-slate-400 leading-relaxed">
+                            {p.description}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Right side: Prices and Action */}
+                      <div className="flex flex-wrap items-center justify-between md:justify-end gap-3.5 w-full md:w-auto border-t md:border-t-0 border-purple-950/40 pt-3 md:pt-0 shrink-0">
+                        {/* Prices block */}
+                        <div className="bg-purple-950/20 px-3 py-2 rounded-xl border border-purple-900/10 flex items-center">
+                          {p.prices ? (
+                            <div className="grid grid-cols-2 xs:flex xs:flex-row gap-x-3 gap-y-1 text-[10px] font-mono text-purple-300">
+                              <div className="flex items-center space-x-1">
+                                <span className="text-slate-500 font-bold">CH:</span>
+                                <span className="text-yellow-400 font-bold">${p.prices[PizzaSize.CH].standard}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <span className="text-slate-500 font-bold">MED:</span>
+                                <span className="text-yellow-400 font-bold">${p.prices[PizzaSize.MED].standard}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <span className="text-slate-500 font-bold">GDE:</span>
+                                <span className="text-yellow-400 font-bold">${p.prices[PizzaSize.GDE].standard}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <span className="text-slate-500 font-bold">FAM:</span>
+                                <span className="text-yellow-400 font-bold">${p.prices[PizzaSize.FAM].standard}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <span className="text-slate-500 font-bold">MEGA:</span>
+                                <span className="text-yellow-400 font-bold">${p.prices[PizzaSize.MEGA].standard}</span>
+                              </div>
+                            </div>
+                          ) : (
+                            <div className="flex items-center space-x-1.5 font-mono">
+                              <span className="text-slate-500 text-[10px] font-bold">PRECIO FIJO:</span>
+                              <span className="text-yellow-400 font-bold text-xs sm:text-sm">${p.price}</span>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Action buttons */}
+                        <button
+                          onClick={() => handleDeleteProduct(p.id)}
+                          className="p-2 bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white rounded-xl transition-all border border-red-500/15"
+                          title="Eliminar del menú"
+                        >
+                          <Trash2 size={14} />
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </motion.div>
           )}
@@ -570,78 +611,98 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
             >
               <h3 className="font-display font-bold text-base text-slate-100">Bitácora General de Órdenes</h3>
 
-              <div className="bg-[#160f1e] rounded-2xl border border-purple-950/40 overflow-hidden">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-purple-950/30 text-purple-300 font-mono text-[9px] uppercase border-b border-purple-900/40">
-                        <th className="p-3">Folio</th>
-                        <th className="p-3">Fecha / Hora</th>
-                        <th className="p-3">Cliente</th>
-                        <th className="p-3">Tipo / Pago</th>
-                        <th className="p-3">Artículos</th>
-                        <th className="p-3">Total</th>
-                        <th className="p-3">Estado</th>
-                        <th className="p-3 text-center">Operación</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-purple-950/20">
-                      {orders.map(o => (
-                        <tr key={o.id} className="hover:bg-purple-950/10">
-                          <td className="p-3 font-mono font-bold text-purple-300">#{o.orderNumber}</td>
-                          <td className="p-3 text-slate-400 text-[10px]">
-                            {new Date(o.timestamp).toLocaleString("es-MX", { hour: "numeric", minute: "numeric", second: "numeric" })}
-                          </td>
-                          <td className="p-3 font-semibold text-slate-200">
-                            <div>{o.customerName}</div>
-                            {o.customerPhone && <div className="text-[10px] text-slate-500 font-normal">{o.customerPhone}</div>}
-                          </td>
-                          <td className="p-3">
-                            <div className="font-bold text-slate-300">{o.type}</div>
-                            <div className="text-[10px] text-slate-500">{o.paymentMethod}</div>
-                          </td>
-                          <td className="p-3">
-                            <div className="space-y-0.5 text-[10px] text-slate-400">
-                              {o.items.map((it, idx) => (
-                                <p key={idx}>• {it.quantity}x {it.name}</p>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="p-3 font-bold text-red-400 font-mono">${o.total}</td>
-                          <td className="p-3">
-                            <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
-                              o.status === "Pendiente" ? "bg-amber-100 text-amber-800" :
-                              o.status === "En Cocina" ? "bg-purple-100 text-purple-800" :
-                              o.status === "Listo" ? "bg-emerald-100 text-emerald-800" :
-                              o.status === "Entregado" ? "bg-slate-100 text-slate-800" : "bg-red-100 text-red-800"
-                            }`}>
-                              {o.status}
+              {/* Bitácora General de Órdenes Cards List - completely responsive, full width, no side scrolling */}
+              <div className="space-y-3.5">
+                {orders.map(o => (
+                  <div 
+                    key={o.id} 
+                    className="bg-[#160f1e]/85 hover:bg-[#1e1428] border border-purple-950/45 p-4 sm:p-5 rounded-2xl flex flex-col md:flex-row justify-between items-start md:items-center gap-4 transition-all w-full shadow-md group relative overflow-hidden"
+                  >
+                    {/* Header line + Details */}
+                    <div className="flex-1 space-y-3 min-w-0 w-full">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                        <span className="font-mono font-black text-purple-300 text-sm">
+                          #{o.orderNumber}
+                        </span>
+                        <span className="text-[11px] text-slate-400 flex items-center">
+                          <Clock size={11} className="mr-1 inline text-purple-400" />
+                          {new Date(o.timestamp).toLocaleString("es-MX", { hour: "numeric", minute: "numeric", second: "numeric" })}
+                        </span>
+                        <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wide border ${
+                          o.status === "Pendiente" ? "bg-amber-500/10 text-amber-400 border-amber-500/20" :
+                          o.status === "En Cocina" ? "bg-purple-500/10 text-purple-400 border-purple-500/20" :
+                          o.status === "Listo" ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" :
+                          o.status === "Entregado" ? "bg-blue-500/10 text-blue-400 border-blue-500/20" : "bg-red-500/10 text-red-400 border-red-500/20"
+                        }`}>
+                          {o.status}
+                        </span>
+                      </div>
+
+                      {/* Customer info and Delivery type */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-purple-950/15 p-3 rounded-xl border border-purple-900/10">
+                        <div>
+                          <p className="text-[9px] text-slate-500 uppercase font-mono tracking-wider">Cliente</p>
+                          <p className="font-semibold text-slate-200 text-xs mt-0.5">{o.customerName}</p>
+                          {o.customerPhone && (
+                            <p className="text-[10px] text-slate-400 font-mono mt-0.5">{o.customerPhone}</p>
+                          )}
+                        </div>
+                        <div>
+                          <p className="text-[9px] text-slate-500 uppercase font-mono tracking-wider">Tipo / Pago</p>
+                          <div className="flex items-center space-x-1.5 mt-1">
+                            <span className="text-[10px] font-bold bg-[#280c33] px-2 py-0.5 rounded text-purple-300 border border-purple-900/30">
+                              {o.type}
                             </span>
-                          </td>
-                          <td className="p-3">
-                            <div className="flex items-center justify-center space-x-1.5">
-                              {o.status !== "Cancelado" && o.status !== "Entregado" && (
-                                <button
-                                  onClick={() => handleCancelOrder(o.id)}
-                                  className="text-red-400 hover:underline text-[10px] bg-red-950/20 px-2 py-1 rounded border border-red-900/30"
-                                >
-                                  Cancelar
-                                </button>
-                              )}
-                              <button
-                                onClick={() => handleDeleteOrder(o.id)}
-                                className="p-1 text-slate-400 hover:text-red-400"
-                                title="Borrar de la base de datos"
-                              >
-                                <Trash2 size={12} />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
+                            <span className="text-[10px] font-medium text-slate-400">
+                              {o.paymentMethod}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Item breakdown */}
+                      <div className="space-y-1">
+                        <p className="text-[9px] text-slate-500 uppercase font-mono tracking-wider">Productos de la Orden</p>
+                        <div className="flex flex-wrap gap-1.5 mt-1">
+                          {o.items.map((it, idx) => (
+                            <span 
+                              key={idx} 
+                              className="text-[10px] text-slate-300 bg-slate-800/60 border border-slate-700/30 px-2.5 py-1 rounded-lg"
+                            >
+                              <strong className="text-yellow-400">{it.quantity}x</strong> {it.name}
+                            </span>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Total and actions */}
+                    <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-center gap-3 w-full md:w-auto border-t md:border-t-0 border-purple-950/40 pt-3.5 md:pt-0 shrink-0">
+                      <div className="text-left sm:text-right">
+                        <p className="text-[9px] text-slate-500 uppercase font-mono tracking-wider">Monto Total</p>
+                        <p className="font-black text-red-400 font-mono text-base sm:text-lg mt-0.5">${o.total}</p>
+                      </div>
+
+                      <div className="flex items-center space-x-2">
+                        {o.status !== "Cancelado" && o.status !== "Entregado" && (
+                          <button
+                            onClick={() => handleCancelOrder(o.id)}
+                            className="bg-red-500/15 text-red-400 hover:bg-red-500 hover:text-white px-3 py-1.5 rounded-xl border border-red-500/20 text-[10px] font-bold transition-all"
+                          >
+                            Cancelar
+                          </button>
+                        )}
+                        <button
+                          onClick={() => handleDeleteOrder(o.id)}
+                          className="p-2 bg-slate-800 hover:bg-red-500 hover:text-white text-slate-400 rounded-xl transition-all border border-slate-700/40"
+                          title="Borrar de la base de datos"
+                        >
+                          <Trash2 size={13} />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
             </motion.div>
           )}
