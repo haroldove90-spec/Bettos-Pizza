@@ -20,17 +20,19 @@ import {
   Layers,
   Monitor,
   ArrowLeft,
-  Home
+  Home,
+  Bike
 } from "lucide-react";
 import ClientMobileApp from "./components/ClientMobileApp";
 import POSSystem from "./components/POSSystem";
 import KitchenDisplay from "./components/KitchenDisplay";
 import AdminPanel from "./components/AdminPanel";
+import DeliveryPanel from "./components/DeliveryPanel";
 import { Role } from "./types";
 import { getStoredOrders, resetToInitial } from "./utils/pizzaStore";
 
 export default function App() {
-  // Active viewing mode: can be "HOME", "MULTIPANEL", or individual roles (Role.CLIENTE, Role.VENDEDOR, Role.COCINA, Role.ADMIN)
+  // Active viewing mode: can be "HOME", "MULTIPANEL", or individual roles (Role.CLIENTE, Role.VENDEDOR, Role.COCINA, Role.ADMIN, Role.MENSAJERO)
   const [viewMode, setViewMode] = useState<"HOME" | "MULTIPANEL" | Role>(() => {
     const saved = localStorage.getItem("bettos_pizza_view_mode");
     if (saved && (saved === "HOME" || saved === "MULTIPANEL" || Object.values(Role).includes(saved as Role))) {
@@ -39,6 +41,7 @@ export default function App() {
     return "HOME";
   });
   const [ordersCount, setOrdersCount] = useState<number>(0);
+  const [readyDeliveriesCount, setReadyDeliveriesCount] = useState<number>(0);
 
   useEffect(() => {
     localStorage.setItem("bettos_pizza_view_mode", viewMode);
@@ -49,6 +52,7 @@ export default function App() {
     const updateCount = () => {
       const orders = getStoredOrders();
       setOrdersCount(orders.filter(o => o.status === "Pendiente" || o.status === "En Cocina").length);
+      setReadyDeliveriesCount(orders.filter(o => o.status === "Listo" && o.type === "Domicilio" && !o.deliveryManName).length);
     };
 
     updateCount();
@@ -98,16 +102,17 @@ export default function App() {
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-3xl">
+              <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-4 sm:gap-6 w-full max-w-5xl">
                 {/* Role 1: Cliente */}
                 <button
                   onClick={() => setViewMode(Role.CLIENTE)}
-                  className="group relative bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 hover:border-purple-500/50 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center justify-center h-48 shadow-lg hover:shadow-purple-500/10 cursor-pointer animate-fadeIn"
+                  className="group relative bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 hover:border-purple-500/50 rounded-2xl p-4 sm:p-6 transition-all duration-300 flex flex-col items-center text-center justify-center h-36 sm:h-48 shadow-lg hover:shadow-purple-500/10 cursor-pointer animate-fadeIn"
                 >
-                  <div className="w-16 h-16 rounded-full bg-purple-500/10 group-hover:bg-purple-500/20 text-purple-400 flex items-center justify-center transition-all duration-300 mb-4 shadow-inner transform group-hover:scale-110">
-                    <ShoppingBag size={32} />
+                  <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-purple-500/10 group-hover:bg-purple-500/20 text-purple-400 flex items-center justify-center transition-all duration-300 mb-2 sm:mb-4 shadow-inner transform group-hover:scale-110">
+                    <ShoppingBag size={24} className="sm:hidden" />
+                    <ShoppingBag size={32} className="hidden sm:block" />
                   </div>
-                  <h3 className="font-display font-black text-xl text-slate-100 group-hover:text-purple-300 transition-colors">
+                  <h3 className="font-display font-black text-sm sm:text-xl text-slate-100 group-hover:text-purple-300 transition-colors">
                     Cliente (Móvil)
                   </h3>
                 </button>
@@ -115,12 +120,13 @@ export default function App() {
                 {/* Role 2: Vendedor */}
                 <button
                   onClick={() => setViewMode(Role.VENDEDOR)}
-                  className="group relative bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 hover:border-emerald-500/50 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center justify-center h-48 shadow-lg hover:shadow-emerald-500/10 cursor-pointer animate-fadeIn"
+                  className="group relative bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 hover:border-emerald-500/50 rounded-2xl p-4 sm:p-6 transition-all duration-300 flex flex-col items-center text-center justify-center h-36 sm:h-48 shadow-lg hover:shadow-emerald-500/10 cursor-pointer animate-fadeIn"
                 >
-                  <div className="w-16 h-16 rounded-full bg-emerald-500/10 group-hover:bg-emerald-500/20 text-emerald-400 flex items-center justify-center transition-all duration-300 mb-4 shadow-inner transform group-hover:scale-110">
-                    <Grid size={32} />
+                  <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-emerald-500/10 group-hover:bg-emerald-500/20 text-emerald-400 flex items-center justify-center transition-all duration-300 mb-2 sm:mb-4 shadow-inner transform group-hover:scale-110">
+                    <Grid size={24} className="sm:hidden" />
+                    <Grid size={32} className="hidden sm:block" />
                   </div>
-                  <h3 className="font-display font-black text-xl text-slate-100 group-hover:text-emerald-300 transition-colors">
+                  <h3 className="font-display font-black text-sm sm:text-xl text-slate-100 group-hover:text-emerald-300 transition-colors">
                     Vendedor (POS)
                   </h3>
                 </button>
@@ -128,30 +134,51 @@ export default function App() {
                 {/* Role 3: Cocina */}
                 <button
                   onClick={() => setViewMode(Role.COCINA)}
-                  className="group relative bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 hover:border-amber-500/50 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center justify-center h-48 shadow-lg hover:shadow-amber-500/10 cursor-pointer animate-fadeIn"
+                  className="group relative bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 hover:border-amber-500/50 rounded-2xl p-4 sm:p-6 transition-all duration-300 flex flex-col items-center text-center justify-center h-36 sm:h-48 shadow-lg hover:shadow-amber-500/10 cursor-pointer animate-fadeIn"
                 >
-                  <div className="w-16 h-16 rounded-full bg-amber-500/10 group-hover:bg-amber-500/20 text-amber-400 flex items-center justify-center transition-all duration-300 mb-4 shadow-inner relative transform group-hover:scale-110">
-                    <ChefHat size={32} />
+                  <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-amber-500/10 group-hover:bg-amber-500/20 text-amber-400 flex items-center justify-center transition-all duration-300 mb-2 sm:mb-4 shadow-inner relative transform group-hover:scale-110">
+                    <ChefHat size={24} className="sm:hidden" />
+                    <ChefHat size={32} className="hidden sm:block" />
                     {ordersCount > 0 && (
-                      <span className="absolute -top-1.5 -right-1.5 bg-red-600 text-white font-mono text-xs w-6.5 h-6.5 rounded-full flex items-center justify-center border-2 border-slate-900 animate-bounce shadow-md">
+                      <span className="absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 bg-red-600 text-white font-mono text-[9px] sm:text-xs w-5 h-5 sm:w-6.5 sm:h-6.5 rounded-full flex items-center justify-center border-2 border-slate-900 animate-bounce shadow-md">
                         {ordersCount}
                       </span>
                     )}
                   </div>
-                  <h3 className="font-display font-black text-xl text-slate-100 group-hover:text-amber-300 transition-colors">
+                  <h3 className="font-display font-black text-sm sm:text-xl text-slate-100 group-hover:text-amber-300 transition-colors">
                     Cocina
                   </h3>
                 </button>
 
-                {/* Role 4: Admin */}
+                {/* Role 4: Mensajero */}
+                <button
+                  onClick={() => setViewMode(Role.MENSAJERO)}
+                  className="group relative bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 hover:border-yellow-500/50 rounded-2xl p-4 sm:p-6 transition-all duration-300 flex flex-col items-center text-center justify-center h-36 sm:h-48 shadow-lg hover:shadow-yellow-500/10 cursor-pointer animate-fadeIn"
+                >
+                  <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-yellow-500/10 group-hover:bg-yellow-500/20 text-yellow-400 flex items-center justify-center transition-all duration-300 mb-2 sm:mb-4 shadow-inner relative transform group-hover:scale-110">
+                    <Bike size={24} className="sm:hidden" />
+                    <Bike size={32} className="hidden sm:block" />
+                    {readyDeliveriesCount > 0 && (
+                      <span className="absolute -top-1 -right-1 sm:-top-1.5 sm:-right-1.5 bg-red-600 text-white font-mono text-[9px] sm:text-xs w-5 h-5 sm:w-6.5 sm:h-6.5 rounded-full flex items-center justify-center border-2 border-slate-900 animate-bounce shadow-md">
+                        {readyDeliveriesCount}
+                      </span>
+                    )}
+                  </div>
+                  <h3 className="font-display font-black text-sm sm:text-xl text-slate-100 group-hover:text-yellow-300 transition-colors">
+                    Mensajero
+                  </h3>
+                </button>
+
+                {/* Role 5: Admin */}
                 <button
                   onClick={() => setViewMode(Role.ADMIN)}
-                  className="group relative bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 hover:border-rose-500/50 rounded-2xl p-6 transition-all duration-300 flex flex-col items-center text-center justify-center h-48 shadow-lg hover:shadow-rose-500/10 cursor-pointer animate-fadeIn"
+                  className="group relative bg-slate-900/80 hover:bg-slate-800 border border-slate-800/80 hover:border-rose-500/50 rounded-2xl p-4 sm:p-6 transition-all duration-300 flex flex-col items-center text-center justify-center h-36 sm:h-48 shadow-lg hover:shadow-rose-500/10 cursor-pointer animate-fadeIn col-span-2 sm:col-span-2 md:col-span-1"
                 >
-                  <div className="w-16 h-16 rounded-full bg-rose-500/10 group-hover:bg-rose-500/20 text-rose-400 flex items-center justify-center transition-all duration-300 mb-4 shadow-inner transform group-hover:scale-110">
-                    <Sliders size={32} />
+                  <div className="w-10 h-10 sm:w-16 sm:h-16 rounded-full bg-rose-500/10 group-hover:bg-rose-500/20 text-rose-400 flex items-center justify-center transition-all duration-300 mb-2 sm:mb-4 shadow-inner transform group-hover:scale-110">
+                    <Sliders size={24} className="sm:hidden" />
+                    <Sliders size={32} className="hidden sm:block" />
                   </div>
-                  <h3 className="font-display font-black text-xl text-slate-100 group-hover:text-rose-300 transition-colors">
+                  <h3 className="font-display font-black text-sm sm:text-xl text-slate-100 group-hover:text-rose-300 transition-colors">
                     Admin
                   </h3>
                 </button>
@@ -193,6 +220,18 @@ export default function App() {
               className="flex-1 flex flex-col min-h-0 w-full"
             >
               <KitchenDisplay onBackToHome={() => setViewMode("HOME")} />
+            </motion.div>
+          )}
+
+          {viewMode === Role.MENSAJERO && (
+            <motion.div
+              key="mensajero-view"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="flex-1 flex flex-col min-h-0 w-full"
+            >
+              <DeliveryPanel onBackToHome={() => setViewMode("HOME")} />
             </motion.div>
           )}
 

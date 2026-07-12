@@ -7,7 +7,8 @@ export enum Role {
   ADMIN = "ADMIN",
   COCINA = "COCINA",
   VENDEDOR = "VENDEDOR",
-  CLIENTE = "CLIENTE"
+  CLIENTE = "CLIENTE",
+  MENSAJERO = "MENSAJERO"
 }
 
 export enum PizzaSize {
@@ -56,7 +57,7 @@ export interface OrderItem {
   price: number;
 }
 
-export type OrderStatus = "Pendiente" | "En Cocina" | "Listo" | "Entregado" | "Cancelado";
+export type OrderStatus = "Pendiente" | "En Cocina" | "Listo" | "En Camino" | "Entregado" | "Cancelado";
 export type OrderType = "Para Llevar" | "Domicilio" | "POS Mesa";
 
 export interface Order {
@@ -72,6 +73,10 @@ export interface Order {
   customerAddress?: string;
   paymentMethod: "Efectivo" | "Tarjeta" | "Transferencia";
   sellerId?: string; // If placed by POS
+  deliveryManId?: string; // If delivered by Mensajero
+  deliveryManName?: string; // Delivery courier's name
+  commissionEarned?: number; // Delivery commission earned
+  deliveredAt?: string; // ISO string when delivery completed
 }
 
 export interface StoreStats {

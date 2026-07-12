@@ -23,7 +23,8 @@ import {
   Printer,
   ChevronDown,
   Home,
-  LogOut
+  LogOut,
+  Upload
 } from "lucide-react";
 import { Product, PizzaSize, Category, OrderItem, OrderType, Order } from "../types";
 import { getStoredProducts, getStoredOrders, saveOrders, generateOrderNumber } from "../utils/pizzaStore";
@@ -52,6 +53,18 @@ export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProp
   const [orderType, setOrderType] = useState<OrderType>("POS Mesa");
   const [paymentMethod, setPaymentMethod] = useState<"Efectivo" | "Tarjeta" | "Transferencia">("Efectivo");
   const [lastPlacedOrder, setLastPlacedOrder] = useState<Order | null>(null);
+
+  // Worker profile states
+  const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
+  const [posWorkerName, setPosWorkerName] = useState<string>(() => {
+    return localStorage.getItem("bettos_pos_worker_name") || "Roberto 'Betto' Martínez";
+  });
+  const [posWorkerPhone, setPosWorkerPhone] = useState<string>(() => {
+    return localStorage.getItem("bettos_pos_worker_phone") || "55 4912-3812";
+  });
+  const [posWorkerAvatar, setPosWorkerAvatar] = useState<string>(() => {
+    return localStorage.getItem("bettos_pos_worker_avatar") || "👨‍🍳";
+  });
 
   // Persist POS cart
   useEffect(() => {
@@ -217,7 +230,16 @@ export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProp
         </div>
 
         {/* Quick info / Action */}
-        <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
+        <div className="flex items-center space-x-2 sm:space-x-3 shrink-0">
+          <button
+            onClick={() => setShowProfileModal(true)}
+            className="flex items-center space-x-2 bg-purple-950/50 hover:bg-purple-900/60 border border-purple-800/30 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg text-slate-100 hover:text-white text-[11px] sm:text-xs font-bold transition-all shadow-xs cursor-pointer"
+            title="Mi Perfil de Vendedor"
+          >
+            <span className="text-sm">{posWorkerAvatar}</span>
+            <span className="hidden sm:inline truncate max-w-[100px]">{posWorkerName.split(" ")[0]}</span>
+          </button>
+
           {onBackToHome && (
             <button
               onClick={onBackToHome}
@@ -592,6 +614,111 @@ export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProp
         </div>
 
       </div>
+
+      {/* Worker Profile Modal */}
+      <AnimatePresence>
+        {showProfileModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/75 backdrop-blur-xs z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 15 }}
+              className="bg-slate-900 border border-purple-950 text-slate-100 rounded-2xl p-5 max-w-md w-full shadow-2xl relative"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-purple-950/80 mb-4">
+                <div className="flex items-center space-x-2">
+                  <User size={18} className="text-[#ffd400]" />
+                  <h3 className="font-display font-bold text-sm sm:text-base text-[#ffd400]">Mi Perfil (Vendedor)</h3>
+                </div>
+                <button
+                  onClick={() => setShowProfileModal(false)}
+                  className="text-slate-400 hover:text-white text-xs bg-slate-800 hover:bg-slate-700 w-6 h-6 rounded-full flex items-center justify-center transition-all"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Avatar selection */}
+                <div className="flex items-center gap-4 bg-slate-950/40 p-3 rounded-xl border border-purple-950/60">
+                  <div className="w-16 h-16 rounded-full bg-purple-950/60 border border-purple-500/50 flex items-center justify-center text-3xl shadow-inner">
+                    {posWorkerAvatar}
+                  </div>
+                  <div className="space-y-1 flex-1">
+                    <p className="text-xs font-bold text-slate-200">Avatar del Colaborador</p>
+                    <p className="text-[10px] text-slate-400">Selecciona tu emoji de cajero:</p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {["👨‍🍳", "👩‍🍳", "👨‍💼", "👩‍💼", "🍕", "🔥", "💼"].map(emoji => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => setPosWorkerAvatar(emoji)}
+                          className={`w-7 h-7 rounded-full border flex items-center justify-center text-xs transition-all ${
+                            posWorkerAvatar === emoji
+                              ? "bg-purple-900/60 border-purple-400 scale-110 shadow-sm"
+                              : "bg-slate-800 border-slate-700 hover:bg-slate-700"
+                          }`}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Name */}
+                <div className="space-y-1">
+                  <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wide">Nombre del Empleado</label>
+                  <input
+                    type="text"
+                    value={posWorkerName}
+                    onChange={(e) => setPosWorkerName(e.target.value)}
+                    placeholder="Tu nombre y apellido"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-600 transition-all font-medium"
+                  />
+                </div>
+
+                {/* Phone */}
+                <div className="space-y-1">
+                  <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wide">Teléfono de Contacto</label>
+                  <input
+                    type="text"
+                    value={posWorkerPhone}
+                    onChange={(e) => setPosWorkerPhone(e.target.value)}
+                    placeholder="Ej: 55 4912-3812"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-purple-600 transition-all font-medium"
+                  />
+                </div>
+
+                {/* Role Info */}
+                <div className="bg-slate-950/60 p-2.5 rounded-lg border border-purple-950 text-[10px] text-slate-400 space-y-1">
+                  <p>🔑 <strong>Rol asignado:</strong> Vendedor de Piso y Cajero Principal</p>
+                  <p>📍 <strong>Sucursal:</strong> Betto's Pizza Sede Central</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.setItem("bettos_pos_worker_name", posWorkerName);
+                    localStorage.setItem("bettos_pos_worker_phone", posWorkerPhone);
+                    localStorage.setItem("bettos_pos_worker_avatar", posWorkerAvatar);
+                    setShowProfileModal(false);
+                    window.dispatchEvent(new Event("bettos_pizza_db_update"));
+                  }}
+                  className="w-full py-2.5 bg-[#ffd400] hover:bg-yellow-300 text-slate-950 font-display font-black text-xs uppercase rounded-xl shadow-md transition-all mt-2"
+                >
+                  Guardar Perfil de Trabajo
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

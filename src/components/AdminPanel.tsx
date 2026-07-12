@@ -24,7 +24,9 @@ import {
   MapPin,
   Calendar,
   Home,
-  LogOut
+  LogOut,
+  User,
+  Upload
 } from "lucide-react";
 import { Product, Order, Category, PizzaSize } from "../types";
 import { getStoredProducts, saveProducts, getStoredOrders, saveOrders, resetToInitial } from "../utils/pizzaStore";
@@ -45,6 +47,18 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
 
   // Active view: "stats" or "products" or "orders"
   const [activeSubTab, setActiveSubTab] = useState<"stats" | "products" | "orders">("stats");
+
+  // Admin Profile state
+  const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
+  const [adminName, setAdminName] = useState<string>(() => {
+    return localStorage.getItem("bettos_admin_name") || "Don Humberto (Propietario)";
+  });
+  const [adminPhone, setAdminPhone] = useState<string>(() => {
+    return localStorage.getItem("bettos_admin_phone") || "55 1020-3040";
+  });
+  const [adminAvatar, setAdminAvatar] = useState<string>(() => {
+    return localStorage.getItem("bettos_admin_avatar") || "👑";
+  });
 
   // Product Editor state
   const [showAddForm, setShowAddForm] = useState<boolean>(false);
@@ -201,6 +215,15 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
 
         {/* Action Trigger */}
         <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
+          <button
+            onClick={() => setShowProfileModal(true)}
+            className="flex items-center space-x-1.5 bg-[#2d1a3a] hover:bg-[#3c254b] border border-purple-800/30 px-2.5 py-1.5 rounded-lg text-slate-100 hover:text-white text-[10px] sm:text-xs font-bold transition-all shadow-xs cursor-pointer"
+            title="Mi Perfil de Administrador"
+          >
+            <span className="text-xs">{adminAvatar}</span>
+            <span className="hidden md:inline truncate max-w-[100px]">{adminName.split(" ")[0]}</span>
+          </button>
+
           {onBackToHome && (
             <button
               onClick={onBackToHome}
@@ -626,6 +649,111 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
         </AnimatePresence>
       </div>
 
+      {/* Admin Profile Modal */}
+      <AnimatePresence>
+        {showProfileModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/75 backdrop-blur-xs z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 15 }}
+              className="bg-[#191122] border border-purple-950/80 text-slate-100 rounded-2xl p-5 max-w-md w-full shadow-2xl relative"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-purple-950/60 mb-4">
+                <div className="flex items-center space-x-2">
+                  <User size={18} className="text-[#ffd400]" />
+                  <h3 className="font-display font-bold text-sm sm:text-base text-[#ffd400]">Mi Perfil (Propietario / Admin)</h3>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowProfileModal(false)}
+                  className="text-slate-400 hover:text-white text-xs bg-slate-800 hover:bg-slate-700 w-6 h-6 rounded-full flex items-center justify-center transition-all"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Avatar selection */}
+                <div className="flex items-center gap-4 bg-[#0a070e] p-3 rounded-xl border border-purple-950/50">
+                  <div className="w-16 h-16 rounded-full bg-slate-900 border border-purple-950/60 flex items-center justify-center text-3xl shadow-inner">
+                    {adminAvatar}
+                  </div>
+                  <div className="space-y-1 flex-1">
+                    <p className="text-xs font-bold text-slate-200">Avatar del Administrador</p>
+                    <p className="text-[10px] text-slate-400">Selecciona tu emoji preferido:</p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {["👑", "🧔", "🍕", "👔", "💼", "🔥", "🚀"].map(emoji => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => setAdminAvatar(emoji)}
+                          className={`w-7 h-7 rounded-full border flex items-center justify-center text-xs transition-all ${
+                            adminAvatar === emoji
+                              ? "bg-purple-900/60 border-[#ffd400] scale-110 shadow-sm"
+                              : "bg-slate-900 border-slate-800 hover:bg-slate-800"
+                          }`}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Name */}
+                <div className="space-y-1">
+                  <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wide">Nombre del Propietario</label>
+                  <input
+                    type="text"
+                    value={adminName}
+                    onChange={(e) => setAdminName(e.target.value)}
+                    placeholder="Tu nombre completo"
+                    className="w-full bg-[#0a070e] border border-purple-950/60 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ffd400] transition-all font-medium"
+                  />
+                </div>
+
+                {/* Phone */}
+                <div className="space-y-1">
+                  <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wide">Teléfono de Contacto</label>
+                  <input
+                    type="text"
+                    value={adminPhone}
+                    onChange={(e) => setAdminPhone(e.target.value)}
+                    placeholder="Ej: 55 1020-3040"
+                    className="w-full bg-[#0a070e] border border-purple-950/60 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#ffd400] transition-all font-medium"
+                  />
+                </div>
+
+                {/* Role Info */}
+                <div className="bg-[#0a070e]/80 p-2.5 rounded-lg border border-purple-950 text-[10px] text-slate-400 space-y-1">
+                  <p>🔑 <strong>Rol asignado:</strong> Administrador Supremo (Owner)</p>
+                  <p>📈 <strong>Acceso:</strong> Control Total de Menú, Inventarios y Finanzas</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.setItem("bettos_admin_name", adminName);
+                    localStorage.setItem("bettos_admin_phone", adminPhone);
+                    localStorage.setItem("bettos_admin_avatar", adminAvatar);
+                    setShowProfileModal(false);
+                    window.dispatchEvent(new Event("bettos_pizza_db_update"));
+                  }}
+                  className="w-full py-2.5 bg-[#ffd400] hover:bg-yellow-300 text-slate-950 font-display font-black text-xs uppercase rounded-xl shadow-md transition-all mt-2"
+                >
+                  Guardar Perfil de Administrador
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

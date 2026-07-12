@@ -20,7 +20,9 @@ import {
   MapPin,
   FileText,
   Home,
-  LogOut
+  LogOut,
+  User,
+  Upload
 } from "lucide-react";
 import { Order, OrderStatus } from "../types";
 import { getStoredOrders, saveOrders } from "../utils/pizzaStore";
@@ -33,6 +35,18 @@ export default function KitchenDisplay({ onBackToHome }: KitchenDisplayProps) {
   const [orders, setOrders] = useState<Order[]>([]);
   const [soundEnabled, setSoundEnabled] = useState<boolean>(true);
   const previousOrdersCount = useRef<number>(0);
+
+  // Kitchen Chef Profile state
+  const [showProfileModal, setShowProfileModal] = useState<boolean>(false);
+  const [chefName, setChefName] = useState<string>(() => {
+    return localStorage.getItem("bettos_kitchen_chef_name") || "Don Benito Pizzero";
+  });
+  const [chefSpecialty, setChefSpecialty] = useState<string>(() => {
+    return localStorage.getItem("bettos_kitchen_chef_specialty") || "Masa Madre y Horno de Leña";
+  });
+  const [chefAvatar, setChefAvatar] = useState<string>(() => {
+    return localStorage.getItem("bettos_kitchen_chef_avatar") || "👨‍🍳";
+  });
 
   // Load orders and handle real-time simulation updates
   useEffect(() => {
@@ -160,6 +174,15 @@ export default function KitchenDisplay({ onBackToHome }: KitchenDisplayProps) {
 
         {/* Audio control & Quick Trigger */}
         <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
+          <button
+            onClick={() => setShowProfileModal(true)}
+            className="flex items-center space-x-2 bg-purple-950/50 hover:bg-purple-900/60 border border-purple-800/30 px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg text-slate-100 hover:text-white text-[11px] sm:text-xs font-bold transition-all shadow-xs cursor-pointer"
+            title="Mi Perfil de Cocina"
+          >
+            <span className="text-sm">{chefAvatar}</span>
+            <span className="hidden md:inline truncate max-w-[100px]">{chefName.split(" ")[0]}</span>
+          </button>
+
           {onBackToHome && (
             <button
               onClick={onBackToHome}
@@ -417,6 +440,111 @@ export default function KitchenDisplay({ onBackToHome }: KitchenDisplayProps) {
         </div>
 
       </div>
+
+      {/* Chef Profile Modal */}
+      <AnimatePresence>
+        {showProfileModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/75 backdrop-blur-xs z-50 flex items-center justify-center p-4"
+          >
+            <motion.div
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 15 }}
+              className="bg-[#111726] border border-slate-800 text-slate-100 rounded-2xl p-5 max-w-md w-full shadow-2xl relative"
+            >
+              <div className="flex items-center justify-between pb-3 border-b border-slate-800 mb-4">
+                <div className="flex items-center space-x-2">
+                  <ChefHat size={18} className="text-yellow-400" />
+                  <h3 className="font-display font-bold text-sm sm:text-base text-yellow-400">Mi Perfil (Chef de Cocina)</h3>
+                </div>
+                <button
+                  onClick={() => setShowProfileModal(false)}
+                  className="text-slate-400 hover:text-white text-xs bg-slate-800 hover:bg-slate-700 w-6 h-6 rounded-full flex items-center justify-center transition-all"
+                >
+                  ✕
+                </button>
+              </div>
+
+              <div className="space-y-4">
+                {/* Avatar selection */}
+                <div className="flex items-center gap-4 bg-slate-950/40 p-3 rounded-xl border border-slate-850">
+                  <div className="w-16 h-16 rounded-full bg-slate-900 border border-slate-700 flex items-center justify-center text-3xl shadow-inner">
+                    {chefAvatar}
+                  </div>
+                  <div className="space-y-1 flex-1">
+                    <p className="text-xs font-bold text-slate-200">Avatar del Maestro Pizzero</p>
+                    <p className="text-[10px] text-slate-400">Selecciona tu emoji de cocinero:</p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {["👨‍🍳", "👩‍🍳", "🍕", "🔥", "🌶️", "🍅", "🧑‍🍳"].map(emoji => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          onClick={() => setChefAvatar(emoji)}
+                          className={`w-7 h-7 rounded-full border flex items-center justify-center text-xs transition-all ${
+                            chefAvatar === emoji
+                              ? "bg-slate-800 border-yellow-400 scale-110 shadow-sm"
+                              : "bg-slate-900 border-slate-800 hover:bg-slate-800"
+                          }`}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Name */}
+                <div className="space-y-1">
+                  <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wide">Nombre del Chef</label>
+                  <input
+                    type="text"
+                    value={chefName}
+                    onChange={(e) => setChefName(e.target.value)}
+                    placeholder="Tu nombre de chef"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-400 transition-all font-medium"
+                  />
+                </div>
+
+                {/* Specialty */}
+                <div className="space-y-1">
+                  <label className="block text-[9px] font-bold text-slate-400 uppercase tracking-wide">Especialidad de Cocina</label>
+                  <input
+                    type="text"
+                    value={chefSpecialty}
+                    onChange={(e) => setChefSpecialty(e.target.value)}
+                    placeholder="Ej: Hornos de Leña y Masas"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-yellow-400 transition-all font-medium"
+                  />
+                </div>
+
+                {/* Role Info */}
+                <div className="bg-slate-950/60 p-2.5 rounded-lg border border-slate-800 text-[10px] text-slate-400 space-y-1">
+                  <p>🍳 <strong>Puesto:</strong> Jefe de Cocina y Maestro Hornero</p>
+                  <p>📍 <strong>Estación:</strong> Horno de Piedra Principal #1</p>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    localStorage.setItem("bettos_kitchen_chef_name", chefName);
+                    localStorage.setItem("bettos_kitchen_chef_specialty", chefSpecialty);
+                    localStorage.setItem("bettos_kitchen_chef_avatar", chefAvatar);
+                    setShowProfileModal(false);
+                    window.dispatchEvent(new Event("bettos_pizza_db_update"));
+                  }}
+                  className="w-full py-2.5 bg-yellow-400 hover:bg-yellow-300 text-slate-950 font-display font-black text-xs uppercase rounded-xl shadow-md transition-all mt-2"
+                >
+                  Guardar Perfil de Cocina
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
