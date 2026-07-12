@@ -178,7 +178,7 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
   };
 
   return (
-    <div className="w-full h-full bg-[#0a070e] text-slate-100 flex flex-col font-sans overflow-hidden">
+    <div className="w-full h-full bg-[#0a070e] text-slate-100 flex flex-col font-sans overflow-hidden pb-16 md:pb-0 relative">
       
       {/* Admin Panel Header */}
       <div className="bg-[#191122] border-b border-purple-950/60 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shadow-lg gap-2 overflow-hidden shrink-0">
@@ -192,8 +192,8 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
           </div>
         </div>
 
-        {/* Subtabs selectors */}
-        <div className="flex items-center space-x-1 sm:space-x-2 bg-[#2d1a3a] p-1 rounded-xl border border-purple-900/40 shrink-0 overflow-x-auto no-scrollbar max-w-[40%] sm:max-w-none">
+        {/* Subtabs selectors (Desktop Only) */}
+        <div className="hidden md:flex items-center space-x-1 sm:space-x-2 bg-[#2d1a3a] p-1 rounded-xl border border-purple-900/40 shrink-0">
           {[
             { id: "stats", label: "Estadísticas" },
             { id: "products", label: "Menú" },
@@ -647,6 +647,33 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
           )}
 
         </AnimatePresence>
+      </div>
+
+      {/* Navigation action bar for mobile/tablet only */}
+      <div className="md:hidden bg-[#191122] border-t border-purple-950/60 py-2.5 px-4 flex justify-around items-center text-slate-400 z-30 shadow-md shrink-0 fixed bottom-0 left-0 right-0 h-16">
+        <button 
+          onClick={() => setActiveSubTab("stats")}
+          className={`flex flex-col items-center space-y-0.5 transition-colors ${activeSubTab === "stats" ? "text-[#ffd400] font-extrabold" : "text-purple-300 hover:text-white"}`}
+        >
+          <TrendingUp size={16} />
+          <span className="text-[9px] font-bold">Estadísticas</span>
+        </button>
+        
+        <button 
+          onClick={() => setActiveSubTab("products")}
+          className={`flex flex-col items-center space-y-0.5 relative transition-colors ${activeSubTab === "products" ? "text-[#ffd400] font-extrabold" : "text-purple-300 hover:text-white"}`}
+        >
+          <Tag size={16} />
+          <span className="text-[9px] font-bold">Menú / Precios</span>
+        </button>
+
+        <button 
+          onClick={() => setActiveSubTab("orders")}
+          className={`flex flex-col items-center space-y-0.5 relative transition-colors ${activeSubTab === "orders" ? "text-[#ffd400] font-extrabold" : "text-purple-300 hover:text-white"}`}
+        >
+          <ShoppingBag size={16} />
+          <span className="text-[9px] font-bold">Historial</span>
+        </button>
       </div>
 
       {/* Admin Profile Modal */}

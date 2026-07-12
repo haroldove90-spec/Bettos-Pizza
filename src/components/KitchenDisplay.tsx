@@ -47,6 +47,7 @@ export default function KitchenDisplay({ onBackToHome }: KitchenDisplayProps) {
   const [chefAvatar, setChefAvatar] = useState<string>(() => {
     return localStorage.getItem("bettos_kitchen_chef_avatar") || "👨‍🍳";
   });
+  const [mobileTab, setMobileTab] = useState<"pending" | "cooking" | "ready">("pending");
 
   // Load orders and handle real-time simulation updates
   useEffect(() => {
@@ -158,7 +159,7 @@ export default function KitchenDisplay({ onBackToHome }: KitchenDisplayProps) {
   };
 
   return (
-    <div className="w-full h-full bg-[#0a0f1d] text-slate-100 flex flex-col font-sans overflow-hidden">
+    <div className="w-full h-full bg-[#0a0f1d] text-slate-100 flex flex-col font-sans overflow-hidden pb-16 lg:pb-0 relative">
       
       {/* Kitchen Header */}
       <div className="bg-[#111726] border-b border-slate-800 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shadow-md gap-2 overflow-hidden shrink-0">
@@ -220,7 +221,7 @@ export default function KitchenDisplay({ onBackToHome }: KitchenDisplayProps) {
       <div className="flex-1 p-6 grid grid-cols-1 lg:grid-cols-3 gap-6 overflow-hidden">
         
         {/* COLUMN 1: PENDIENTE */}
-        <div className="flex flex-col bg-[#12192c]/60 rounded-2xl border border-slate-800/80 p-4 overflow-hidden">
+        <div className={`flex flex-col bg-[#12192c]/60 rounded-2xl border border-slate-800/80 p-4 overflow-hidden ${mobileTab === "pending" ? "flex" : "hidden lg:flex"}`}>
           <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
             <div className="flex items-center space-x-2">
               <span className="w-2.5 h-2.5 bg-amber-500 rounded-full animate-pulse"></span>
@@ -289,7 +290,7 @@ export default function KitchenDisplay({ onBackToHome }: KitchenDisplayProps) {
         </div>
 
         {/* COLUMN 2: EN COCINA / PREPARANDO */}
-        <div className="flex flex-col bg-[#12192c]/60 rounded-2xl border border-slate-800/80 p-4 overflow-hidden">
+        <div className={`flex flex-col bg-[#12192c]/60 rounded-2xl border border-slate-800/80 p-4 overflow-hidden ${mobileTab === "cooking" ? "flex" : "hidden lg:flex"}`}>
           <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
             <div className="flex items-center space-x-2">
               <span className="w-2.5 h-2.5 bg-purple-500 rounded-full animate-ping"></span>
@@ -371,7 +372,7 @@ export default function KitchenDisplay({ onBackToHome }: KitchenDisplayProps) {
         </div>
 
         {/* COLUMN 3: LISTO / COMPLETADO */}
-        <div className="flex flex-col bg-[#12192c]/60 rounded-2xl border border-slate-800/80 p-4 overflow-hidden">
+        <div className={`flex flex-col bg-[#12192c]/60 rounded-2xl border border-slate-800/80 p-4 overflow-hidden ${mobileTab === "ready" ? "flex" : "hidden lg:flex"}`}>
           <div className="flex items-center justify-between mb-3 pb-2 border-b border-slate-800">
             <div className="flex items-center space-x-2">
               <span className="w-2.5 h-2.5 bg-emerald-500 rounded-full"></span>
@@ -439,6 +440,54 @@ export default function KitchenDisplay({ onBackToHome }: KitchenDisplayProps) {
           </div>
         </div>
 
+      </div>
+
+      {/* Navigation action bar for mobile/tablet only */}
+      <div className="lg:hidden bg-[#111726] border-t border-slate-800 py-2.5 px-4 flex justify-around items-center text-slate-400 z-30 shadow-md shrink-0 fixed bottom-0 left-0 right-0 h-16">
+        <button 
+          onClick={() => setMobileTab("pending")}
+          className={`flex flex-col items-center space-y-0.5 relative transition-colors ${mobileTab === "pending" ? "text-yellow-400 font-extrabold" : "text-slate-400 hover:text-white"}`}
+        >
+          <div className="relative">
+            <Clock size={16} />
+            {pendingOrders.length > 0 && (
+              <span className="absolute -top-1.5 -right-2 bg-amber-500 text-slate-950 text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-slate-950">
+                {pendingOrders.length}
+              </span>
+            )}
+          </div>
+          <span className="text-[9px] font-bold">Por Confirmar</span>
+        </button>
+        
+        <button 
+          onClick={() => setMobileTab("cooking")}
+          className={`flex flex-col items-center space-y-0.5 relative transition-colors ${mobileTab === "cooking" ? "text-yellow-400 font-extrabold" : "text-slate-400 hover:text-white"}`}
+        >
+          <div className="relative">
+            <ChefHat size={16} />
+            {cookingOrders.length > 0 && (
+              <span className="absolute -top-1.5 -right-2 bg-purple-500 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-slate-950">
+                {cookingOrders.length}
+              </span>
+            )}
+          </div>
+          <span className="text-[9px] font-bold">En Cocina</span>
+        </button>
+
+        <button 
+          onClick={() => setMobileTab("ready")}
+          className={`flex flex-col items-center space-y-0.5 relative transition-colors ${mobileTab === "ready" ? "text-yellow-400 font-extrabold" : "text-slate-400 hover:text-white"}`}
+        >
+          <div className="relative">
+            <CheckCircle size={16} />
+            {readyOrders.length > 0 && (
+              <span className="absolute -top-1.5 -right-2 bg-emerald-500 text-slate-950 text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-slate-950">
+                {readyOrders.length}
+              </span>
+            )}
+          </div>
+          <span className="text-[9px] font-bold">Listos</span>
+        </button>
       </div>
 
       {/* Chef Profile Modal */}

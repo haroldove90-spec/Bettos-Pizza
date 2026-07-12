@@ -215,7 +215,7 @@ export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProp
   });
 
   return (
-    <div className="w-full h-full bg-slate-900 text-slate-100 flex flex-col overflow-hidden font-sans">
+    <div className="w-full h-full bg-slate-900 text-slate-100 flex flex-col overflow-hidden font-sans pb-16 md:pb-0 relative">
       
       {/* POS Header */}
       <div className="bg-[#1f0824] border-b border-purple-950/60 px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between shadow-lg gap-2 overflow-hidden shrink-0">
@@ -258,37 +258,6 @@ export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProp
             </p>
           </div>
         </div>
-      </div>
-
-      {/* Mobile Tab Switcher */}
-      <div className="flex md:hidden bg-[#240e29] border-b border-purple-950/55 p-2 gap-2 shrink-0">
-        <button
-          onClick={() => setMobileTab("menu")}
-          className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 ${
-            mobileTab === "menu"
-              ? "bg-[#ffd400] text-slate-950 font-extrabold shadow-sm"
-              : "bg-slate-800/40 text-purple-200 hover:bg-slate-800/60"
-          }`}
-        >
-          <Layers size={13} />
-          <span>Ver Menú</span>
-        </button>
-        <button
-          onClick={() => setMobileTab("cart")}
-          className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all flex items-center justify-center space-x-1.5 relative ${
-            mobileTab === "cart"
-              ? "bg-[#ffd400] text-slate-950 font-extrabold shadow-sm"
-              : "bg-slate-800/40 text-purple-200 hover:bg-slate-800/60"
-          }`}
-        >
-          <ShoppingBag size={13} />
-          <span>Ver Orden</span>
-          {cart.length > 0 && (
-            <span className="bg-red-600 text-white text-[9px] font-black w-4.5 h-4.5 rounded-full flex items-center justify-center border border-slate-950 shrink-0 ml-1">
-              {cart.reduce((a, b) => a + b.quantity, 0)}
-            </span>
-          )}
-        </button>
       </div>
 
       {/* Main Workspace */}
@@ -613,6 +582,32 @@ export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProp
 
         </div>
 
+      </div>
+
+      {/* Navigation action bar for mobile/tablet only */}
+      <div className="md:hidden bg-[#1f0824] border-t border-purple-950/60 py-2.5 px-4 flex justify-around items-center text-slate-400 z-30 shadow-md shrink-0 fixed bottom-0 left-0 right-0 h-16">
+        <button 
+          onClick={() => setMobileTab("menu")}
+          className={`flex flex-col items-center space-y-0.5 transition-colors ${mobileTab === "menu" ? "text-[#ffd400] font-extrabold" : "text-purple-300 hover:text-white"}`}
+        >
+          <Layers size={16} />
+          <span className="text-[9px] font-bold">Ver Menú</span>
+        </button>
+        
+        <button 
+          onClick={() => setMobileTab("cart")}
+          className={`flex flex-col items-center space-y-0.5 relative transition-colors ${mobileTab === "cart" ? "text-[#ffd400] font-extrabold" : "text-purple-300 hover:text-white"}`}
+        >
+          <div className="relative">
+            <ShoppingBag size={16} />
+            {cart.length > 0 && (
+              <span className="absolute -top-1.5 -right-2 bg-red-600 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-slate-950">
+                {cart.reduce((a, b) => a + b.quantity, 0)}
+              </span>
+            )}
+          </div>
+          <span className="text-[9px] font-bold">Ver Orden</span>
+        </button>
       </div>
 
       {/* Worker Profile Modal */}

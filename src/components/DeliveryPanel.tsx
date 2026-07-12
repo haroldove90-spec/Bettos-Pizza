@@ -212,7 +212,7 @@ export default function DeliveryPanel({ onBackToHome }: DeliveryPanelProps) {
   const readyDomicilioCount = orders.filter(o => o.status === "Listo" && o.type === "Domicilio").length;
 
   return (
-    <div className="w-full h-full bg-[#0d0714] text-slate-100 flex flex-col font-sans overflow-hidden">
+    <div className="w-full h-full bg-[#0d0714] text-slate-100 flex flex-col font-sans overflow-hidden pb-16 md:pb-0 relative">
       
       {/* Header Panel */}
       <header className="bg-[#150a22] border-b border-purple-950/70 px-4 sm:px-6 py-3 flex items-center justify-between shadow-lg gap-2 shrink-0">
@@ -259,8 +259,8 @@ export default function DeliveryPanel({ onBackToHome }: DeliveryPanelProps) {
       {/* Main Panel Content (Split: Navigation Menu Left or Top, Active Module right) */}
       <div className="flex-1 flex flex-col md:flex-row overflow-hidden min-h-0">
         
-        {/* Navigation Sidebar (Desktop) / Tabs bar (Mobile) */}
-        <aside className="w-full md:w-60 bg-[#0f0717] md:border-r border-purple-950/40 flex flex-row md:flex-col shrink-0 overflow-x-auto md:overflow-x-visible md:overflow-y-auto scrollbar-none z-10">
+        {/* Navigation Sidebar (Desktop Only) */}
+        <aside className="hidden md:flex md:w-60 bg-[#0f0717] md:border-r border-purple-950/40 md:flex-col shrink-0 md:overflow-y-auto z-10">
           <div className="flex md:flex-col w-full p-2 gap-1.5 md:p-3">
             
             {/* Tab 1: Semáforo Live */}
@@ -995,6 +995,74 @@ export default function DeliveryPanel({ onBackToHome }: DeliveryPanelProps) {
 
         </main>
 
+      </div>
+
+      {/* Navigation action bar for mobile/tablet only */}
+      <div className="md:hidden bg-[#0f0717] border-t border-purple-950/40 py-2 px-3 flex justify-around items-center text-slate-400 z-30 shadow-md shrink-0 fixed bottom-0 left-0 right-0 h-16">
+        <button 
+          onClick={() => setActiveTab("semaphore")}
+          className={`flex flex-col items-center space-y-0.5 relative transition-colors ${activeTab === "semaphore" ? "text-[#ffd400] font-extrabold" : "text-purple-300 hover:text-white"}`}
+        >
+          <div className="relative">
+            <Layers size={16} />
+            {pendingCount + preparingCount > 0 && (
+              <span className="absolute -top-1.5 -right-2 bg-purple-600 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-slate-950">
+                {pendingCount + preparingCount}
+              </span>
+            )}
+          </div>
+          <span className="text-[9px] font-bold">Semáforo</span>
+        </button>
+
+        <button 
+          onClick={() => setActiveTab("available")}
+          className={`flex flex-col items-center space-y-0.5 relative transition-colors ${activeTab === "available" ? "text-[#ffd400] font-extrabold" : "text-purple-300 hover:text-white"}`}
+        >
+          <div className="relative">
+            <Bike size={16} />
+            {availableDeliveries.length > 0 && (
+              <span className="absolute -top-1.5 -right-2 bg-red-600 text-white text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-slate-950">
+                {availableDeliveries.length}
+              </span>
+            )}
+          </div>
+          <span className="text-[9px] font-bold">Listos</span>
+        </button>
+
+        <button 
+          onClick={() => setActiveTab("my-deliveries")}
+          className={`flex flex-col items-center space-y-0.5 relative transition-colors ${activeTab === "my-deliveries" ? "text-[#ffd400] font-extrabold" : "text-purple-300 hover:text-white"}`}
+        >
+          <div className="relative">
+            <Navigation size={16} />
+            {myActiveDeliveries.length > 0 && (
+              <span className="absolute -top-1.5 -right-2 bg-yellow-400 text-slate-950 text-[8px] font-black w-4 h-4 rounded-full flex items-center justify-center border border-slate-950">
+                {myActiveDeliveries.length}
+              </span>
+            )}
+          </div>
+          <span className="text-[9px] font-bold">Reparto</span>
+        </button>
+
+        <button 
+          onClick={() => setActiveTab("history")}
+          className={`flex flex-col items-center space-y-0.5 relative transition-colors ${activeTab === "history" ? "text-[#ffd400] font-extrabold" : "text-purple-300 hover:text-white"}`}
+        >
+          <div className="relative">
+            <CheckCircle size={16} />
+          </div>
+          <span className="text-[9px] font-bold">Entregas</span>
+        </button>
+
+        <button 
+          onClick={() => setActiveTab("commissions")}
+          className={`flex flex-col items-center space-y-0.5 relative transition-colors ${activeTab === "commissions" ? "text-[#ffd400] font-extrabold" : "text-purple-300 hover:text-white"}`}
+        >
+          <div className="relative">
+            <DollarSign size={16} />
+          </div>
+          <span className="text-[9px] font-bold">Comisiones</span>
+        </button>
       </div>
 
       {/* Courier Profile Modal */}
