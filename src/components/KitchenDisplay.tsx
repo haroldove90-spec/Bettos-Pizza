@@ -19,7 +19,8 @@ import {
   VolumeX,
   MapPin,
   FileText,
-  Home
+  Home,
+  LogOut
 } from "lucide-react";
 import { Order, OrderStatus } from "../types";
 import { getStoredOrders, saveOrders } from "../utils/pizzaStore";
@@ -146,48 +147,48 @@ export default function KitchenDisplay({ onBackToHome }: KitchenDisplayProps) {
     <div className="w-full h-full bg-[#0a0f1d] text-slate-100 flex flex-col font-sans overflow-hidden">
       
       {/* Kitchen Header */}
-      <div className="bg-[#111726] border-b border-slate-800 px-6 py-4 flex items-center justify-between shadow-md">
-        <div className="flex items-center space-x-3">
-          <div className="p-2 bg-[#ffd400] text-slate-950 rounded-lg">
-            <ChefHat size={22} className="animate-bounce" />
+      <div className="bg-[#111726] border-b border-slate-800 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shadow-md gap-2 overflow-hidden shrink-0">
+        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 shrink-0">
+          <div className="p-1.5 sm:p-2 bg-[#ffd400] text-slate-950 rounded-lg shrink-0">
+            <ChefHat size={18} sm:size={22} className="animate-bounce" />
           </div>
-          <div>
-            <h2 className="font-display font-black text-lg tracking-tight uppercase text-yellow-400">Pantalla de Cocina</h2>
-            <p className="text-xs text-slate-400">Pedidos de Pizza en Tiempo Real</p>
+          <div className="min-w-0">
+            <h2 className="font-display font-black text-xs sm:text-sm md:text-lg tracking-tight uppercase text-yellow-400 whitespace-nowrap truncate">Pantalla de Cocina</h2>
+            <p className="text-[9px] sm:text-xs text-slate-400 whitespace-nowrap truncate">Pedidos en Tiempo Real</p>
           </div>
         </div>
 
         {/* Audio control & Quick Trigger */}
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-1.5 sm:space-x-3 shrink-0">
           {onBackToHome && (
             <button
               onClick={onBackToHome}
-              className="px-3 py-1.5 rounded-lg bg-yellow-400/10 hover:bg-yellow-400/20 border border-yellow-400/20 text-yellow-400 text-xs font-bold transition-all flex items-center space-x-1 cursor-pointer mr-2"
-              title="Volver al Inicio"
+              className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg bg-red-950/40 hover:bg-red-900/50 border border-red-800/30 text-red-200 hover:text-white text-[11px] sm:text-xs font-bold transition-all shadow-xs flex items-center space-x-1 cursor-pointer shrink-0"
+              title="Cambiar de Rol / Salir"
             >
-              <Home size={14} />
-              <span>Inicio</span>
+              <LogOut size={13} sm:size={14} className="shrink-0" />
+              <span className="hidden sm:inline">Salir</span>
             </button>
           )}
 
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all ${
+            className={`px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg text-[11px] sm:text-xs font-semibold flex items-center space-x-1 sm:space-x-1.5 transition-all shrink-0 ${
               soundEnabled 
                 ? "bg-slate-800 hover:bg-slate-700 text-yellow-400" 
                 : "bg-red-950/40 border border-red-900/60 text-red-400"
             }`}
           >
-            {soundEnabled ? <Volume2 size={14} /> : <VolumeX size={14} />}
-            <span>{soundEnabled ? "Sonido Activo" : "Silenciado"}</span>
+            {soundEnabled ? <Volume2 size={13} sm:size={14} /> : <VolumeX size={13} sm:size={14} />}
+            <span className="hidden sm:inline">{soundEnabled ? "Sonido Activo" : "Silenciado"}</span>
           </button>
 
           <button
             onClick={playAlarmChime}
-            className="p-1.5 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300"
+            className="p-1.5 sm:p-2 bg-slate-800 hover:bg-slate-700 rounded-lg text-slate-300 shrink-0"
             title="Probar Alarma"
           >
-            <Bell size={14} />
+            <Bell size={13} sm:size={14} />
           </button>
         </div>
       </div>

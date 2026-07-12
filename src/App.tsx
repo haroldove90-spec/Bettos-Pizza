@@ -206,6 +206,15 @@ export default function App() {
           <span>Sucursal Principal: Av. Sta Cecilia Mz. 6Lt. 26, Hugo Cervantes del Río (priv. Sta Cecilia y Circuito Chicoasen) Tlanepantla, Edo. de México</span>
         </p>
         <div className="flex items-center justify-center gap-3 font-medium text-slate-300">
+          {viewMode !== "HOME" && (
+            <button
+              onClick={() => setViewMode("HOME")}
+              className="px-2.5 py-1 rounded-lg bg-[#ffd400] hover:bg-yellow-300 text-slate-950 font-extrabold transition-all text-[10px] uppercase tracking-wider cursor-pointer mr-1 flex items-center space-x-1 shadow-md shrink-0"
+              title="Volver al menú de selección de roles"
+            >
+              <span>← Ver Otros Roles</span>
+            </button>
+          )}
           <span className="flex items-center text-green-400"><Phone size={11} className="mr-1" /> 55 1326-5826</span>
           <span>•</span>
           <span className="text-[#ffd400]">Se Aceptan Transferencias</span>

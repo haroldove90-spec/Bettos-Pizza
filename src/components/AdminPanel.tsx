@@ -23,7 +23,8 @@ import {
   Tag,
   MapPin,
   Calendar,
-  Home
+  Home,
+  LogOut
 } from "lucide-react";
 import { Product, Order, Category, PizzaSize } from "../types";
 import { getStoredProducts, saveProducts, getStoredOrders, saveOrders, resetToInitial } from "../utils/pizzaStore";
@@ -166,28 +167,28 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
     <div className="w-full h-full bg-[#0a070e] text-slate-100 flex flex-col font-sans overflow-hidden">
       
       {/* Admin Panel Header */}
-      <div className="bg-[#191122] border-b border-purple-950/60 px-6 py-4 flex items-center justify-between shadow-lg">
-        <div className="flex items-center space-x-3.5">
-          <div className="p-2 bg-[#ffd400] text-slate-900 rounded-xl">
-            <Sliders size={20} />
+      <div className="bg-[#191122] border-b border-purple-950/60 px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between shadow-lg gap-2 overflow-hidden shrink-0">
+        <div className="flex items-center space-x-2 sm:space-x-3.5 min-w-0 shrink-0">
+          <div className="p-1.5 sm:p-2 bg-[#ffd400] text-slate-900 rounded-xl shrink-0">
+            <Sliders size={16} sm:size={20} />
           </div>
-          <div>
-            <h2 className="font-display font-black text-base text-[#ffd400] uppercase tracking-wide">Panel de Administración</h2>
-            <p className="text-[10px] text-purple-300 font-mono">BETTO'S PIZZA • SISTEMA CENTRAL</p>
+          <div className="min-w-0">
+            <h2 className="font-display font-black text-xs sm:text-sm md:text-base text-[#ffd400] uppercase tracking-wide whitespace-nowrap truncate">Administración</h2>
+            <p className="text-[9px] sm:text-[10px] text-purple-300 font-mono whitespace-nowrap truncate">SISTEMA CENTRAL</p>
           </div>
         </div>
 
         {/* Subtabs selectors */}
-        <div className="flex items-center space-x-2 bg-[#2d1a3a] p-1 rounded-xl border border-purple-900/40">
+        <div className="flex items-center space-x-1 sm:space-x-2 bg-[#2d1a3a] p-1 rounded-xl border border-purple-900/40 shrink-0 overflow-x-auto no-scrollbar max-w-[40%] sm:max-w-none">
           {[
             { id: "stats", label: "Estadísticas" },
-            { id: "products", label: "Menú / Carta" },
-            { id: "orders", label: "Historial Pedidos" }
+            { id: "products", label: "Menú" },
+            { id: "orders", label: "Historial" }
           ].map(tab => (
             <button
               key={tab.id}
               onClick={() => setActiveSubTab(tab.id as any)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all duration-150 ${
+              className={`px-2 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold whitespace-nowrap transition-all duration-150 ${
                 activeSubTab === tab.id
                   ? "bg-[#ffd400] text-slate-950 font-bold"
                   : "text-purple-200 hover:bg-purple-950/40"
@@ -199,25 +200,25 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
         </div>
 
         {/* Action Trigger */}
-        <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-1.5 sm:space-x-2 shrink-0">
           {onBackToHome && (
             <button
               onClick={onBackToHome}
-              className="text-[10px] font-bold text-yellow-400 hover:text-yellow-300 flex items-center space-x-1.5 border border-yellow-900/30 bg-yellow-950/10 hover:bg-yellow-950/20 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
-              title="Volver al Inicio"
+              className="text-[10px] font-bold text-red-200 hover:text-white flex items-center space-x-1 border border-red-900/30 bg-red-950/20 hover:bg-red-900/40 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer shrink-0"
+              title="Cambiar de Rol / Salir"
             >
-              <Home size={11} />
-              <span>Inicio</span>
+              <LogOut size={11} className="shrink-0" />
+              <span className="hidden sm:inline">Salir</span>
             </button>
           )}
 
           <button
             onClick={handleResetData}
-            className="text-[10px] font-bold text-red-400 hover:text-red-300 flex items-center space-x-1 border border-red-900/30 bg-red-950/10 hover:bg-red-950/40 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer"
+            className="text-[10px] font-bold text-red-400 hover:text-red-300 flex items-center space-x-1 border border-red-900/30 bg-red-950/10 hover:bg-red-950/40 px-2.5 py-1.5 rounded-lg transition-all cursor-pointer shrink-0"
             title="Restaurar base de datos"
           >
             <Database size={11} />
-            <span className="hidden sm:inline">Restaurar Demo</span>
+            <span className="hidden sm:inline">Restaurar</span>
           </button>
         </div>
       </div>

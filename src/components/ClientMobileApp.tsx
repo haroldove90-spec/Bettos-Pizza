@@ -19,7 +19,8 @@ import {
   Sparkles,
   Info,
   Bike,
-  Home
+  Home,
+  LogOut
 } from "lucide-react";
 import { Product, PizzaSize, Category, OrderItem, OrderType, Order } from "../types";
 import { getStoredProducts, getStoredOrders, saveOrders, generateOrderNumber } from "../utils/pizzaStore";
@@ -221,63 +222,63 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
     <div className="w-full flex-1 bg-slate-50 text-slate-800 flex flex-col relative select-none">
       
       {/* Pizzeria branding header */}
-      <div className="bg-[#2C0C30] text-white px-4 md:px-6 py-3.5 shadow-md relative z-20 flex flex-col shrink-0">
-        <div className="max-w-6xl mx-auto w-full flex items-center justify-between gap-4">
-          <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-yellow-400 rounded-full border-2 border-red-500 flex items-center justify-center shadow-md font-bold text-red-600 text-sm tracking-tighter shrink-0">
+      <div className="bg-[#2C0C30] text-white px-3 sm:px-4 md:px-6 py-3.5 shadow-md relative z-20 flex flex-col shrink-0">
+        <div className="max-w-6xl mx-auto w-full flex items-center justify-between gap-2 sm:gap-4">
+          <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-yellow-400 rounded-full border-2 border-red-500 flex items-center justify-center shadow-md font-bold text-red-600 text-xs sm:text-sm tracking-tighter shrink-0">
               BETTO
             </div>
-            <div>
-              <div className="flex items-center space-x-2">
-                <h1 className="font-display font-extrabold text-base md:text-xl text-[#ffd400] tracking-tight leading-none">Betto's Pizza</h1>
-                <span className="text-[9px] bg-red-600 text-white font-black px-1.5 py-0.5 rounded uppercase tracking-wide">Cliente</span>
+            <div className="min-w-0">
+              <div className="flex items-center space-x-1.5 sm:space-x-2">
+                <h1 className="font-display font-extrabold text-sm sm:text-base md:text-xl text-[#ffd400] tracking-tight leading-none truncate">Betto's Pizza</h1>
+                <span className="text-[8px] sm:text-[9px] bg-red-600 text-white font-black px-1 sm:px-1.5 py-0.5 rounded uppercase tracking-wide shrink-0">Cliente</span>
               </div>
-              <p className="text-[10px] md:text-xs text-yellow-300/80 flex items-center mt-1 font-medium">
-                <Clock size={11} className="mr-1 text-yellow-400" /> Horario: 12:00 PM A 10:30 PM
+              <p className="text-[9px] sm:text-[10px] md:text-xs text-yellow-300/80 flex items-center mt-1 font-medium truncate">
+                <Clock size={10} className="mr-1 text-yellow-400 shrink-0" /> Horario: 12:00 PM A 10:30 PM
               </p>
             </div>
           </div>
           
-          <div className="flex items-center space-x-2.5">
+          <div className="flex items-center space-x-1.5 sm:space-x-2.5 shrink-0">
             {onBackToHome && (
               <button 
                 onClick={onBackToHome}
-                className="px-3 py-2 rounded-xl bg-purple-950/50 hover:bg-purple-900/60 border border-purple-800/40 text-slate-200 hover:text-white text-xs font-bold transition-all shadow-xs flex items-center space-x-1 cursor-pointer"
-                title="Volver al Inicio"
+                className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-red-950/40 hover:bg-red-900/50 border border-red-900/30 text-red-200 hover:text-white text-[11px] sm:text-xs font-bold transition-all shadow-xs flex items-center space-x-1 cursor-pointer shrink-0"
+                title="Cambiar de Rol / Salir"
               >
-                <Home size={14} />
-                <span className="hidden md:inline">Inicio</span>
+                <LogOut size={13} sm:size={14} className="shrink-0" />
+                <span className="hidden sm:inline">Salir</span>
               </button>
             )}
 
             <button 
               onClick={() => setViewState("status")}
-              className={`relative px-3 py-2 rounded-xl transition-all flex items-center space-x-1.5 text-xs font-bold shadow-xs ${
+              className={`relative px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl transition-all flex items-center space-x-1 sm:space-x-1.5 text-[11px] sm:text-xs font-bold shadow-xs ${
                 viewState === "status"
                   ? "bg-yellow-400 text-slate-950"
                   : "bg-[#4a1d5c] hover:bg-[#5e2974] text-white"
               }`}
               title="Mis Pedidos"
             >
-              <Bike size={14} />
+              <Bike size={13} sm:size={14} className="shrink-0" />
               <span className="hidden sm:inline">Mis Pedidos</span>
               {placedOrders.some(o => o.status !== "Entregado") && (
-                <span className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-red-500 rounded-full border border-white animate-pulse"></span>
+                <span className="absolute -top-1 -right-1 w-2 h-2 sm:w-2.5 sm:h-2.5 bg-red-500 rounded-full border border-white animate-pulse"></span>
               )}
             </button>
 
             <button 
               onClick={() => setViewState("cart")}
-              className={`relative px-3 py-2 rounded-xl transition-all flex items-center space-x-1.5 text-xs font-bold shadow-xs ${
+              className={`relative px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl transition-all flex items-center space-x-1 sm:space-x-1.5 text-[11px] sm:text-xs font-bold shadow-xs ${
                 viewState === "cart"
                   ? "bg-yellow-400 text-slate-950"
                   : "bg-[#4a1d5c] hover:bg-[#5e2974] text-white"
               }`}
             >
-              <ShoppingBag size={14} />
-              <span>Carrito</span>
+              <ShoppingBag size={13} sm:size={14} className="shrink-0" />
+              <span className="hidden sm:inline">Carrito</span>
               {cart.length > 0 && (
-                <span className="bg-red-600 text-white font-display text-[9px] w-4.5 h-4.5 rounded-full flex items-center justify-center border border-white shrink-0 font-bold">
+                <span className="bg-red-600 text-white font-display text-[9px] w-4 h-4 sm:w-4.5 sm:h-4.5 rounded-full flex items-center justify-center border border-white shrink-0 font-bold ml-0.5">
                   {cart.reduce((a, b) => a + b.quantity, 0)}
                 </span>
               )}
@@ -831,14 +832,14 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-slate-950/70 backdrop-blur-xs z-50 flex items-center justify-center p-4"
+            className="fixed inset-0 bg-slate-950/75 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-4"
           >
             <motion.div 
               initial={{ scale: 0.95, y: 15 }}
               animate={{ scale: 1, y: 0 }}
               exit={{ scale: 0.95, y: 15 }}
               transition={{ type: "spring", damping: 25, stiffness: 220 }}
-              className="bg-white rounded-2xl max-w-lg w-full max-h-[90%] overflow-y-auto p-5 md:p-6 flex flex-col space-y-4 shadow-2xl border border-slate-100"
+              className="bg-white rounded-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto p-4 sm:p-5 md:p-6 flex flex-col space-y-3.5 sm:space-y-4 shadow-2xl border border-slate-100"
             >
               <div className="flex justify-between items-start">
                 <div>
@@ -865,7 +866,7 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
               {selectedProduct.prices && (
                 <div className="space-y-1.5">
                   <label className="block text-[10px] font-bold text-slate-600 uppercase tracking-wide">Selecciona el Tamaño de la Pizza</label>
-                  <div className="grid grid-cols-5 gap-2">
+                  <div className="grid grid-cols-5 gap-1.5 sm:gap-2">
                     {(Object.keys(selectedProduct.prices) as PizzaSize[]).map(size => {
                       const isSelected = selectedSize === size;
                       const pricesObj = selectedProduct.prices![size];

@@ -22,7 +22,8 @@ import {
   Sparkles,
   Printer,
   ChevronDown,
-  Home
+  Home,
+  LogOut
 } from "lucide-react";
 import { Product, PizzaSize, Category, OrderItem, OrderType, Order } from "../types";
 import { getStoredProducts, getStoredOrders, saveOrders, generateOrderNumber } from "../utils/pizzaStore";
@@ -191,24 +192,24 @@ export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProp
     <div className="w-full h-full bg-slate-900 text-slate-100 flex flex-col overflow-hidden font-sans">
       
       {/* POS Header */}
-      <div className="bg-[#1f0824] border-b border-purple-950/60 px-6 py-3 flex items-center justify-between shadow-lg">
-        <div className="flex items-center space-x-3">
-          <div className="w-10 h-10 bg-[#ffd400] text-red-600 rounded-lg flex items-center justify-center font-display font-black text-lg border-2 border-red-500 shadow-inner">
+      <div className="bg-[#1f0824] border-b border-purple-950/60 px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between shadow-lg gap-2 overflow-hidden shrink-0">
+        <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 shrink-0">
+          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#ffd400] text-red-600 rounded-lg flex items-center justify-center font-display font-black text-sm sm:text-lg border border-red-500 shadow-inner shrink-0">
             BP
           </div>
-          <div>
-            <h2 className="font-display font-bold text-base text-[#ffd400] leading-none tracking-tight">Betto's Pizza - POS Terminal</h2>
-            <p className="text-[10px] text-purple-300 font-mono mt-0.5">VENDEDOR / CAJA ACTIVA</p>
+          <div className="min-w-0">
+            <h2 className="font-display font-bold text-xs sm:text-sm md:text-base text-[#ffd400] leading-none tracking-tight whitespace-nowrap truncate">Betto's Pizza - POS Terminal</h2>
+            <p className="text-[9px] sm:text-[10px] text-purple-300 font-mono mt-0.5 whitespace-nowrap truncate">VENDEDOR / CAJA ACTIVA</p>
           </div>
         </div>
 
         {/* Categories Tab selector */}
-        <div className="flex space-x-1.5 overflow-x-auto max-w-[50%] no-scrollbar">
+        <div className="flex space-x-1 sm:space-x-1.5 overflow-x-auto max-w-[40%] sm:max-w-[50%] no-scrollbar shrink-0">
           {["All", "Especialidad", "Un Solo Ingrediente", "Paquete", "Hamburguesa", "Empanada", "Spaghetti", "Bebida"].map(cat => (
             <button
               key={cat}
               onClick={() => setSelectedCategory(cat)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap transition-all duration-150 ${
+              className={`px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-[10px] sm:text-xs font-semibold whitespace-nowrap transition-all duration-150 ${
                 selectedCategory === cat
                   ? "bg-[#ffd400] text-slate-900 shadow-md font-bold"
                   : "bg-[#33113D] text-purple-200 hover:bg-[#481856]"
@@ -220,19 +221,19 @@ export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProp
         </div>
 
         {/* Quick info */}
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4 shrink-0">
           {onBackToHome && (
             <button
               onClick={onBackToHome}
-              className="px-3 py-1.5 rounded-lg bg-purple-950/40 hover:bg-purple-900/40 border border-purple-800/30 text-slate-200 hover:text-white text-xs font-bold transition-all flex items-center space-x-1 cursor-pointer"
-              title="Volver al Inicio"
+              className="px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-lg bg-red-950/40 hover:bg-red-900/50 border border-red-800/30 text-red-200 hover:text-white text-[11px] sm:text-xs font-bold transition-all shadow-xs flex items-center space-x-1 cursor-pointer shrink-0"
+              title="Cambiar de Rol / Salir"
             >
-              <Home size={14} />
-              <span>Inicio</span>
+              <LogOut size={13} sm:size={14} className="shrink-0" />
+              <span className="hidden sm:inline">Salir</span>
             </button>
           )}
 
-          <div className="text-right hidden sm:block">
+          <div className="text-right hidden md:block">
             <p className="text-xs text-purple-200">Terminal #01</p>
             <p className="text-[9px] text-green-400 font-mono flex items-center justify-end">
               <span className="w-1.5 h-1.5 bg-green-500 rounded-full mr-1.5 animate-pulse"></span> CONECTADO
