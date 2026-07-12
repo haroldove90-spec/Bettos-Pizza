@@ -36,6 +36,33 @@ interface POSSystemProps {
 
 export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProps) {
   const [products, setProducts] = useState<Product[]>([]);
+  const [branding, setBranding] = useState(() => {
+    const saved = localStorage.getItem("bettos_pizza_branding");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch {
+        return null;
+      }
+    }
+    return null;
+  });
+
+  useEffect(() => {
+    const handleBrandingUpdate = () => {
+      const saved = localStorage.getItem("bettos_pizza_branding");
+      if (saved) {
+        try {
+          setBranding(JSON.parse(saved));
+        } catch (e) {
+          console.error("Error updating POS branding", e);
+        }
+      }
+    };
+    window.addEventListener("bettos_pizza_branding_update", handleBrandingUpdate);
+    return () => window.removeEventListener("bettos_pizza_branding_update", handleBrandingUpdate);
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedCategory, setSelectedCategory] = useState<string>("All");
   const [cart, setCart] = useState<OrderItem[]>(() => {
@@ -220,11 +247,22 @@ export default function POSSystem({ onOrderPlaced, onBackToHome }: POSSystemProp
       {/* POS Header */}
       <div className="bg-[#1f0824] border-b border-purple-950/60 px-4 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between shadow-lg gap-2 overflow-hidden shrink-0">
         <div className="flex items-center space-x-2 sm:space-x-3 min-w-0 shrink-0">
-          <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#ffd400] text-red-600 rounded-lg flex items-center justify-center font-display font-black text-sm sm:text-lg border border-red-500 shadow-inner shrink-0">
-            BP
-          </div>
+          {branding?.logoUrl ? (
+            <img 
+              src={branding.logoUrl} 
+              alt="Logo" 
+              className="w-8 h-8 sm:w-10 sm:h-10 object-contain rounded-lg bg-black/10 border border-white/10 shrink-0"
+              referrerPolicy="no-referrer"
+            />
+          ) : (
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-[#ffd400] text-red-600 rounded-lg flex items-center justify-center font-display font-black text-sm sm:text-lg border border-red-500 shadow-inner shrink-0">
+              BP
+            </div>
+          )}
           <div className="min-w-0">
-            <h2 className="font-display font-bold text-xs sm:text-sm md:text-base text-[#ffd400] leading-none tracking-tight whitespace-nowrap truncate">Betto's Pizza - POS Terminal</h2>
+            <h2 className="font-display font-bold text-xs sm:text-sm md:text-base text-[#ffd400] leading-none tracking-tight whitespace-nowrap truncate">
+              {branding?.posTerminalName || branding?.appName || "Betto's Pizza"}
+            </h2>
             <p className="text-[9px] sm:text-[10px] text-purple-300 font-mono mt-0.5 whitespace-nowrap truncate">VENDEDOR / CAJA ACTIVA</p>
           </div>
         </div>

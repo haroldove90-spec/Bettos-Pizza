@@ -133,7 +133,16 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
       accentColor: "#ffd400",
       accentTextColor: "#0a070e",
       textColor: "#f1f5f9",
-      headerColor: "#191122"
+      headerColor: "#191122",
+      homeSubtitle: "SISTEMA DE GESTIÓN DE ROLES",
+      clientPromoTag: "2X1 TODOS LOS DÍAS",
+      clientSpecialtyTitle: "Especialidades al 2x1",
+      clientWelcomeText: "Edo. de México",
+      clientPhoneText: "55 1326-5826",
+      clientMinOrderAmount: 200,
+      clientFooterSchedule: "Abierto todos los días de 1:00 PM a 11:00 PM",
+      clientDeliveryInstruction: "Tu pizza se prepara al momento con ingredientes frescos.",
+      posTerminalName: "Betto's Pizza - POS Terminal"
     };
     if (saved) {
       try {
@@ -1602,7 +1611,7 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
                 <button
                   type="button"
                   onClick={() => {
-                    if (confirm("¿Deseas restablecer el diseño original de la aplicación?")) {
+                    if (confirm("¿Deseas restablecer el diseño y textos originales de la aplicación?")) {
                       const initial = {
                         appName: "Betto's Pizza",
                         logoUrl: "",
@@ -1614,7 +1623,16 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
                         accentColor: "#ffd400",
                         accentTextColor: "#0a070e",
                         textColor: "#f1f5f9",
-                        headerColor: "#191122"
+                        headerColor: "#191122",
+                        homeSubtitle: "SISTEMA DE GESTIÓN DE ROLES",
+                        clientPromoTag: "2X1 TODOS LOS DÍAS",
+                        clientSpecialtyTitle: "Especialidades al 2x1",
+                        clientWelcomeText: "Edo. de México",
+                        clientPhoneText: "55 1326-5826",
+                        clientMinOrderAmount: 200,
+                        clientFooterSchedule: "Abierto todos los días de 1:00 PM a 11:00 PM",
+                        clientDeliveryInstruction: "Tu pizza se prepara al momento con ingredientes frescos.",
+                        posTerminalName: "Betto's Pizza - POS Terminal"
                       };
                       localStorage.setItem("bettos_pizza_branding", JSON.stringify(initial));
                       setBranding(initial);
@@ -1631,40 +1649,149 @@ export default function AdminPanel({ onBackToHome }: AdminPanelProps) {
                 
                 {/* CONFIGURATION FORM */}
                 <div className="bg-[#160f1e]/80 border border-purple-950/60 p-5 rounded-2xl space-y-4 shadow-xl">
-                  <h4 className="font-bold text-xs uppercase tracking-widest text-[#ffd400] border-b border-purple-950/40 pb-2">Identidad de Marca</h4>
+                  <h4 className="font-bold text-xs uppercase tracking-widest text-[#ffd400] border-b border-purple-950/40 pb-2">Identidad de Marca y Plataforma</h4>
                   
                   <div className="space-y-3.5 text-xs">
-                    <div>
-                      <label className="block text-slate-300 font-bold mb-1">Nombre de la Aplicación</label>
-                      <input 
-                        type="text" 
-                        value={branding.appName}
-                        onChange={e => {
-                          const updated = { ...branding, appName: e.target.value };
-                          setBranding(updated);
-                        }}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 focus:outline-none focus:border-[#ffd400] text-slate-100"
-                        placeholder="Ej. Betto's Pizza"
-                      />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-1">Nombre de la Aplicación</label>
+                        <input 
+                          type="text" 
+                          value={branding.appName}
+                          onChange={e => {
+                            const updated = { ...branding, appName: e.target.value };
+                            setBranding(updated);
+                          }}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 focus:outline-none focus:border-[#ffd400] text-slate-100"
+                          placeholder="Ej. Betto's Pizza"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-1">Subtítulo (Pantalla de Roles)</label>
+                        <input 
+                          type="text" 
+                          value={branding.homeSubtitle || ""}
+                          onChange={e => {
+                            const updated = { ...branding, homeSubtitle: e.target.value };
+                            setBranding(updated);
+                          }}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 focus:outline-none focus:border-[#ffd400] text-slate-100"
+                          placeholder="Ej. SISTEMA DE GESTIÓN DE ROLES"
+                        />
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="block text-slate-300 font-bold mb-1">URL del Logo (Opcional)</label>
-                      <input 
-                        type="url" 
-                        value={branding.logoUrl}
-                        onChange={e => {
-                          const updated = { ...branding, logoUrl: e.target.value };
-                          setBranding(updated);
-                        }}
-                        className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2.5 focus:outline-none focus:border-[#ffd400] text-slate-100 font-mono text-[11px]"
-                        placeholder="https://ejemplo.com/logo.png"
-                      />
-                      <p className="text-[10px] text-slate-500 mt-1">Sube una imagen y pega el enlace aquí. Se mostrará en el menú de bienvenida y los menús.</p>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-1">URL del Logo (Opcional)</label>
+                        <input 
+                          type="url" 
+                          value={branding.logoUrl}
+                          onChange={e => {
+                            const updated = { ...branding, logoUrl: e.target.value };
+                            setBranding(updated);
+                          }}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 focus:outline-none focus:border-[#ffd400] text-slate-100 font-mono text-[11px]"
+                          placeholder="https://ejemplo.com/logo.png"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-1">Nombre de Terminal POS</label>
+                        <input 
+                          type="text" 
+                          value={branding.posTerminalName || ""}
+                          onChange={e => {
+                            const updated = { ...branding, posTerminalName: e.target.value };
+                            setBranding(updated);
+                          }}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 focus:outline-none focus:border-[#ffd400] text-slate-100"
+                          placeholder="Ej. Betto's Pizza - POS Terminal"
+                        />
+                      </div>
                     </div>
                   </div>
 
-                  <h4 className="font-bold text-xs uppercase tracking-widest text-[#ffd400] border-b border-purple-950/40 pt-4 pb-2">Paleta de Colores</h4>
+                  <h4 className="font-bold text-xs uppercase tracking-widest text-[#ffd400] border-b border-purple-950/40 pt-2 pb-2">Textos de Aplicación Cliente</h4>
+                  
+                  <div className="space-y-3.5 text-xs">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-1">Título de Especialidades (Carta)</label>
+                        <input 
+                          type="text" 
+                          value={branding.clientSpecialtyTitle || ""}
+                          onChange={e => {
+                            const updated = { ...branding, clientSpecialtyTitle: e.target.value };
+                            setBranding(updated);
+                          }}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 focus:outline-none focus:border-[#ffd400] text-slate-100"
+                          placeholder="Ej. Especialidades al 2x1"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-1">Etiqueta Promocional (Tag)</label>
+                        <input 
+                          type="text" 
+                          value={branding.clientPromoTag || ""}
+                          onChange={e => {
+                            const updated = { ...branding, clientPromoTag: e.target.value };
+                            setBranding(updated);
+                          }}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 focus:outline-none focus:border-[#ffd400] text-slate-100"
+                          placeholder="Ej. 2X1 TODOS LOS DÍAS"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-0.5">Ubicación (Sidebar)</label>
+                        <input 
+                          type="text" 
+                          value={branding.clientWelcomeText || ""}
+                          onChange={e => {
+                            const updated = { ...branding, clientWelcomeText: e.target.value };
+                            setBranding(updated);
+                          }}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 focus:outline-none focus:border-[#ffd400] text-slate-100"
+                          placeholder="Ej. Edo. de México"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-0.5">Teléfono Contacto</label>
+                        <input 
+                          type="text" 
+                          value={branding.clientPhoneText || ""}
+                          onChange={e => {
+                            const updated = { ...branding, clientPhoneText: e.target.value };
+                            setBranding(updated);
+                          }}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 focus:outline-none focus:border-[#ffd400] text-slate-100 font-mono"
+                          placeholder="Ej. 55 1326-5826"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block text-slate-300 font-bold mb-0.5">Monto Pedido Mínimo ($)</label>
+                        <input 
+                          type="number" 
+                          value={branding.clientMinOrderAmount || 0}
+                          onChange={e => {
+                            const updated = { ...branding, clientMinOrderAmount: parseInt(e.target.value) || 0 };
+                            setBranding(updated);
+                          }}
+                          className="w-full bg-slate-900 border border-slate-800 rounded-lg p-2 focus:outline-none focus:border-[#ffd400] text-slate-100 font-mono"
+                          placeholder="200"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <h4 className="font-bold text-xs uppercase tracking-widest text-[#ffd400] border-b border-purple-950/40 pt-2 pb-2">Paleta de Colores</h4>
                   
                   <div className="space-y-3.5 text-xs">
                     {/* Background Selection Type */}

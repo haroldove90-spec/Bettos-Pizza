@@ -42,7 +42,17 @@ export const INITIAL_BRANDING = {
   accentColor: "#ffd400",
   accentTextColor: "#0a070e",
   textColor: "#f1f5f9",
-  headerColor: "#191122"
+  headerColor: "#191122",
+  // Customizable text defaults
+  homeSubtitle: "SISTEMA DE GESTIÓN DE ROLES",
+  clientPromoTag: "2X1 TODOS LOS DÍAS",
+  clientSpecialtyTitle: "Especialidades al 2x1",
+  clientWelcomeText: "Edo. de México",
+  clientPhoneText: "55 1326-5826",
+  clientMinOrderAmount: 200,
+  clientFooterSchedule: "Abierto todos los días de 1:00 PM a 11:00 PM",
+  clientDeliveryInstruction: "Tu pizza se prepara al momento con ingredientes frescos.",
+  posTerminalName: "Betto's Pizza - POS Terminal"
 };
 
 export default function App() {
@@ -237,7 +247,7 @@ export default function App() {
                   {branding.appName || "BETTO'S PIZZA"}
                 </h1>
                 <p className="text-xs text-slate-400 uppercase tracking-widest font-semibold mt-3">
-                  SISTEMA DE GESTIÓN DE ROLES
+                  {branding.homeSubtitle || "SISTEMA DE GESTIÓN DE ROLES"}
                 </p>
               </div>
 

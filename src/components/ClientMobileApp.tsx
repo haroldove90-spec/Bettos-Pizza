@@ -110,16 +110,39 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
     }
   };
 
+  const DEFAULT_BRANDING = {
+    appName: "Betto's Pizza",
+    logoUrl: "",
+    bgType: "gradient",
+    bgColor: "#0a070e",
+    bgGradientStart: "#1f0824",
+    bgGradientEnd: "#0d020e",
+    cardColor: "#160f1e",
+    accentColor: "#ffd400",
+    accentTextColor: "#0a070e",
+    textColor: "#f1f5f9",
+    headerColor: "#191122",
+    homeSubtitle: "SISTEMA DE GESTIÓN DE ROLES",
+    clientPromoTag: "2X1 TODOS LOS DÍAS",
+    clientSpecialtyTitle: "Especialidades al 2x1",
+    clientWelcomeText: "Edo. de México",
+    clientPhoneText: "55 1326-5826",
+    clientMinOrderAmount: 200,
+    clientFooterSchedule: "Abierto todos los días de 1:00 PM a 11:00 PM",
+    clientDeliveryInstruction: "Tu pizza se prepara al momento con ingredientes frescos.",
+    posTerminalName: "Betto's Pizza - POS Terminal"
+  };
+
   const [branding, setBranding] = useState(() => {
     const saved = localStorage.getItem("bettos_pizza_branding");
     if (saved) {
       try {
-        return JSON.parse(saved);
+        return { ...DEFAULT_BRANDING, ...JSON.parse(saved) };
       } catch {
-        return null;
+        return DEFAULT_BRANDING;
       }
     }
-    return null;
+    return DEFAULT_BRANDING;
   });
 
   useEffect(() => {
@@ -127,7 +150,7 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
       const saved = localStorage.getItem("bettos_pizza_branding");
       if (saved) {
         try {
-          setBranding(JSON.parse(saved));
+          setBranding({ ...DEFAULT_BRANDING, ...JSON.parse(saved) });
         } catch (e) {
           console.error("Error updating client branding", e);
         }
@@ -275,8 +298,9 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
     }
 
     const totalCart = getCartTotal();
-    if (orderType === "Domicilio" && totalCart < 200) {
-      alert("El consumo mínimo para servicio a domicilio es de $200 pesos.");
+    const minOrderAmount = Number(branding?.clientMinOrderAmount ?? 200);
+    if (orderType === "Domicilio" && totalCart < minOrderAmount) {
+      alert(`El consumo mínimo para servicio a domicilio es de $${minOrderAmount} pesos.`);
       return;
     }
 
@@ -482,8 +506,8 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
         {/* Footer actions in Left Sidebar */}
         <div className="space-y-4 pt-4 border-t border-purple-950/40">
           <div className="text-[10px] text-slate-400 space-y-1">
-            <p className="flex items-center"><MapPin size={10} className="mr-1 text-red-400" /> Edo. de México</p>
-            <p className="flex items-center font-bold text-white"><Phone size={10} className="mr-1 text-green-400" /> 55 1326-5826</p>
+            <p className="flex items-center"><MapPin size={10} className="mr-1 text-red-400" /> {branding?.clientWelcomeText || "Edo. de México"}</p>
+            <p className="flex items-center font-bold text-white"><Phone size={10} className="mr-1 text-green-400" /> {branding?.clientPhoneText || "55 1326-5826"}</p>
           </div>
           {onBackToHome && (
             <button 
@@ -745,11 +769,11 @@ export default function ClientMobileApp({ onOrderPlaced, onBackToHome }: ClientM
                 {/* Title Header for selected Category */}
                 <div className="flex items-center justify-between mb-4 pb-1 border-b border-slate-200/60">
                   <h2 className="font-display font-bold text-base uppercase tracking-wide text-[#3B0D4B]">
-                    {activeTab === "Especialidad" ? "Especialidades al 2x1" : activeTab}
+                    {activeTab === "Especialidad" ? (branding?.clientSpecialtyTitle || "Especialidades al 2x1") : activeTab}
                   </h2>
                   {activeTab === "Especialidad" && (
                     <span className="text-[10px] bg-red-100 text-red-700 font-extrabold px-2 py-0.5 rounded-full border border-red-200 animate-pulse">
-                      2X1 TODOS LOS DÍAS
+                      {branding?.clientPromoTag || "2X1 TODOS LOS DÍAS"}
                     </span>
                   )}
                 </div>
